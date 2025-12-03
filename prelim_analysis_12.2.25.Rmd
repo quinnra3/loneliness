@@ -1,20 +1,56 @@
 ---
-title: "Prelim Analysis 12.2.2025"
+title: "Prelim Analysis - LSU Study"
 author: "Quinn Anderson"
 date: "`r Sys.Date()`"
 output: html_document
 ---
 
+### Prelim Analysis Plan:
+#### 1. LOAD
+#### 2. CLEAN
+#### 3. RECODE
+#### 4. CALCULATE
+#### 5. ANALYZE
+
+
+#### 1. Load packages and import data
 GitHub Setup
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
-usethis::create_github_token()
 ```
 
-1. Load libraries:
+Load libraries:
 ```{r}
 library(tidyverse)
-library(dplyr)
 ```
+
+Import prelim data (12/3 downloaded from REDCap):
+```{r, results = 'hide'}
+getwd()
+
+loneliness_df = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2025-12-03_1400.csv")
+
+names(loneliness_df)
+```
+
+
+#### 2. Cleaning
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

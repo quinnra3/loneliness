@@ -13,7 +13,7 @@
 
 <meta name="date" content="2025-12-03" />
 
-<title>Prelim Analysis 12.2.2025</title>
+<title>Prelim Analysis - LSU Study</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -350,17 +350,34 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">Prelim Analysis 12.2.2025</h1>
+<h1 class="title toc-ignore">Prelim Analysis - LSU Study</h1>
 <h4 class="author">Quinn Anderson</h4>
 <h4 class="date">2025-12-03</h4>
 
 </div>
 
 
+<div id="prelim-analysis-plan" class="section level3">
+<h3>Prelim Analysis Plan:</h3>
+<div id="load" class="section level4">
+<h4>1. LOAD</h4>
+</div>
+<div id="clean" class="section level4">
+<h4>2. CLEAN</h4>
+</div>
+<div id="recode" class="section level4">
+<h4>3. RECODE</h4>
+</div>
+<div id="calculate" class="section level4">
+<h4>4. CALCULATE</h4>
+</div>
+<div id="analyze" class="section level4">
+<h4>5. ANALYZE</h4>
+</div>
+<div id="load-packages-and-import-data" class="section level4">
+<h4>1. Load packages and import data</h4>
 <p>GitHub Setup</p>
-<ol style="list-style-type: decimal">
-<li>Load libraries:</li>
-</ol>
+<p>Load libraries:</p>
 <pre class="r"><code>library(tidyverse)</code></pre>
 <pre><code>## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
 ## ✔ dplyr     1.1.4     ✔ readr     2.1.6
@@ -372,7 +389,17 @@ display: none;
 ## ✖ dplyr::filter() masks stats::filter()
 ## ✖ dplyr::lag()    masks stats::lag()
 ## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
-<pre class="r"><code>library(dplyr)</code></pre>
+<p>Import prelim data (12/3 downloaded from REDCap):</p>
+<pre class="r"><code>getwd()
+
+loneliness_df = read.csv(file = &quot;./data/LonelinessAndSubstan-ALLDATA_DATA_2025-12-03_1400.csv&quot;)
+
+names(loneliness_df)</code></pre>
+</div>
+<div id="cleaning" class="section level4">
+<h4>2. Cleaning</h4>
+</div>
+</div>
 
 
 
