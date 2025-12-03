@@ -1,0 +1,24 @@
+Notes / Questions
+
+12/3/25:
+- what variables to include for each outcome?
+  1. Exposure: calculated loneliness score
+        - reverse coding of some items in UCLA loneliness scale
+        - calculate loneliness score
+        
+  2. Outcomes:
+        a. binge alc, any sub. use not alc or marj. --> both for past 12mo., 3mo.
+        b. cannabis, past 12mo., 3mo.
+        c. elicits (meth, crack cocaine, heroin), past 12mo., 3mo.
+        d. anxiety
+        e. depression
+        
+  3. Covariates:
+        a. age (patient_age)
+           - operationalize for 3 categories from contin.:
+              18-34 -> young adults
+              35-50 -> middle aged adults
+              50+   -> older adults
+        b. sex (patient_gender)
+        c. race/ethnicity (patient_race, patient_race_2?)
+
