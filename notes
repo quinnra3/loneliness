@@ -6,9 +6,16 @@ Notes / Questions
         - reverse coding of some items in UCLA loneliness scale
         - calculate loneliness score
         
+        * we're ignoring the UCLA 3-Item Loneliness Scale?
+        * item #63 (outgoing) on the data dictionary is not in the dataset?
+        
   2. Outcomes:
         a. binge alc, any sub. use not alc or marj. --> both for past 12mo., 3mo.
             - past 3 mo
+                (alcohol_1, 2, 3, 4? new variable for binge_drink?)
+              
+            - past 12mo
+                (females, males)
                 
         b. cannabis, past 12mo., 3mo.
             - (marijuana_1, not marijuana_2 or marijuana_3?)
@@ -19,6 +26,8 @@ Notes / Questions
                 heroin: (heroin_1, not heroin_2, or heroin_3?)
                 
             - past 12 mo (drugs?)
+            
+            * why are we not using opiates?
             
         d. anxiety (gad_score)
         
