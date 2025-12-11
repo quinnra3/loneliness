@@ -1,41 +1,116 @@
 ---
-title: "Prelim Analysis - LSU Study"
+title: "Prelim Analysis - Loneliness and Substance Use Study"
 author: "Quinn Anderson"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  html_document:
+    toc: false        # optional: change to "true" for table of contents
+    toc_float: false  # optional: change to "true" for floating TOC
+    code_folding: hide
 ---
 
-### Prelim Analysis TOC:
-#### 1. LOAD
-#### 2. CLEAN
-#### 3. RECODE
-#### 4. CALCULATE
-#### 5. ANALYZE
 
+## Prelim Analysis
 
-#### 1. Load packages and import data
-GitHub Setup
-```{r setup, include=FALSE}
+### 1. Load packages and import data
+```{r, include=FALSE, warning=FALSE, results='hide'}
 knitr::opts_chunk$set(echo = TRUE)
-```
 
-Load libraries:
-```{r}
 library(tidyverse)
 ```
 
-Import prelim data (12/3 downloaded from REDCap):
-```{r, results = 'hide'}
-getwd()
-
-loneliness_df = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2025-12-03_1400.csv")
-
-names(loneliness_df)
+Import prelim data (12/8 downloaded from REDCap):
+```{r, results='hide'}
+raw_LSU = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2025-12-08_1344.csv")
 ```
 
+### 2. Exploratory Analysis
 
-#### 2. Cleaning
+### Coding
 
+Age (variable name 'patient_age') distribution as continuous, categorical, and by decade. 
+```{r, include=FALSE, warning=FALSE, results='hide'}
+raw_LSU |> 
+  summarise(
+    age_mean = mean(patient_age),
+    age_sd = sd(patient_age))
+    
+ggplot(data = raw_LSU, aes(x = patient_age))+
+geom_histogram()
+
+skimr::skim(raw_LSU, patient_age)
+```
+
+Age by decade
+```{r}
+age_df <- raw_LSU |> 
+  mutate(
+    age_decade = cut(
+      patient_age,
+      breaks = c(18, 30, 40, 50, Inf),
+      labels = c("18-29", "30-39", "40-49", "50+"),
+      right = FALSE),
+    age_decade = factor(
+      age_decade,
+      levels = c(
+        "18-29",
+        "30-39",
+        "40-49",
+        "50+")))
+```
+
+Age by category
+```{r}
+age_df <- age_df |> 
+  mutate(
+    age_cat = case_when(
+      patient_age >= 18 & patient_age <= 35 ~ "Young Adults (18-35)",
+      patient_age >= 35 & patient_age <= 50 ~ "Middle Aged Adults (35-50)",
+      patient_age >= 50 ~ "Older Adults (50+)"),
+    age_cat = factor(
+      age_cat,
+      levels = c(
+        "Young Adults (18-35)",
+        "Middle Aged Adults (35-50)",
+        "Older Adults (50+)")))
+```
+
+#### Visualization
+
+Age Continuous Histogram
+```{r}
+ggplot(age_df, aes(x = patient_age)) +
+  geom_histogram(aes(y = ..density..),
+                 binwidth = 2, fill = "steelblue", color = "white")+
+  geom_density(alpha = .2, fill = "navy") +
+  labs(title = "Distribution of Participant Age", x = "Participant Age", y = "Count")
+```
+
+Age by categories (18-35, 35-50, 50+)
+```{r}
+ggplot(age_df, aes(x = age_cat)) + 
+  geom_bar(fill = "grey36") +
+  labs(title = "Participants Grouped by age_cat")
+```
+
+Age by decade (18-29, 30-39, 40-49, 50+)
+```{r}
+ggplot(age_df, aes(x = age_decade)) + 
+  geom_bar(fill = "maroon") +
+  labs(title = "Participants Grouped by Decade")
+```
+
+#### Tables
+```{r}
+age_df |> 
+  summarise(
+    mean_age = mean(patient_age),
+    sd_age = sd(patient_age),
+    median_age = median(patient_age),
+    IQR_age = IQR(patient_age),
+    min_age = min(patient_age),
+    max_age = max(patient_age))
+```
 
 
 

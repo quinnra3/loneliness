@@ -29,14 +29,83 @@ raw_LSU
 view(raw_LSU) # <- use to view file from RStudio
 
 
-## 1a. EXPLORATORY ANALYSIS
+## 2. EXPLORATORY ANALYSIS
 
-# Age ('patient_age' in dataset)
+# Age ('patient_age')
+raw_LSU |> 
+  summarise(
+    age_mean = mean(patient_age),
+    age_sd = sd(patient_age))
+    
+ggplot(data = raw_LSU, aes(x = patient_age))+
+geom_histogram()
+
+skimr::skim(raw_LSU, patient_age)
+
+# Age by decade
+age_df <- raw_LSU |> 
+  mutate(
+    age_decade = cut(
+      patient_age,
+      breaks = c(18, 30, 40, 50, Inf),
+      labels = c("18-29", "30-39", "40-49", "50+"),
+      right = FALSE),
+    age_decade = factor(
+      age_decade,
+      levels = c(
+        "18-29",
+        "30-39",
+        "40-49",
+        "50+"
+      )))
+
+# Age by category
+age_df <- age_df |> 
+  mutate(
+    age_cat = case_when(
+      patient_age >= 18 & patient_age <= 35 ~ "Young Adults (18-35)",
+      patient_age >= 35 & patient_age <= 50 ~ "Middle Aged Adults (35-50)",
+      patient_age >= 50 ~ "Older Adults (50+)"),
+    age_cat = factor(
+      age_cat,
+      levels = c(
+        "Young Adults (18-35)",
+        "Middle Aged Adults (35-50)",
+        "Older Adults (50+)"
+      )))
+  
+# Age continuous Histogram
+ggplot(age_df, aes(x = patient_age)) +
+  geom_histogram(aes(y = ..density..),
+                 binwidth = 2, fill = "steelblue", color = "white")+
+  geom_density(alpha = .2, fill = "navy") +
+  labs(title = "Distribution of Participant Age", x = "Participant Age", y = "Count")
+
+# Age by categories (18-35, 35-50, 50+)
+ggplot(age_df, aes(x = age_cat)) + 
+  geom_bar(fill = "grey36") +
+  labs(title = "Participants Grouped by age_cat")
+
+# Age by decade
+ggplot(age_df, aes(x = age_decade)) + 
+  geom_bar(fill = "maroon") +
+  labs(title = "Participants Grouped by Decade")
+
+# Continuous Age Summary
+age_df |> 
+  summarise(
+    mean_age = mean(patient_age),
+    sd_age = sd(patient_age),
+    median_age = median(patient_age),
+    IQR_age = IQR(patient_age),
+    min_age = min(patient_age),
+    max_age = max(patient_age))
 
 
 
 
-## 2. CLEAN DATA
+
+## 2. CLEAN DATA FOR PRELIM ANALYSIS
 
 # view var names
 var_names = names(raw_LSU)
@@ -78,7 +147,7 @@ loneliness_df = raw_LSU |>
     common,
     close,
     interest_ideas,
-  # outgoing, <-- this is in UCLA scale on REDCap, data dictionary, not in downloaded CSVs?
+    outgoing,
     close_people,
     left_out,
     relationship,
@@ -95,22 +164,7 @@ loneliness_df = raw_LSU |>
 
 view(loneliness_df)
 
-# first, make age_cat
-loneliness_df = loneliness_df |> 
-  mutate(
-    age_cat = case_when(
-      patient_age >= 18 & patient_age < 35 ~ "18-34",
-      patient_age >= 35 & patient_age < 50 ~ "35-49",
-      patient_age >= 50 ~ "50+"))
 
-loneliness_df |> 
-  count(age_cat)
-
-loneliness_df |> 
-  mutate(
-    age_group_check = cut(patient_age, breaks = c(17, 34.999, 49.999, Inf))) |> 
-  filter(!is.na(patient_age)) |> 
-  count(age_group_check, age_cat)
 
 # recode dichot variables from 1(yes) 2(no) -> 1(yes) 0(no)
 loneliness_df = loneliness_df |> 
@@ -158,19 +212,10 @@ loneliness_df = loneliness_df |>
 
 ## 3. Table 1 - Overall prevalence and prevalence by loneliness
 
-## 3a. Prevalence of loneliness by Covariates
-
-
 
 ## 4. Table 2 - Logistic Regression
 
-## 4a. Crude Analyses W/O Anxiety and Depression
 
-## 4b. Crude Analyses W/ Anxiety and Depression
-
-## 4c. Adjusted Analyses W/O Anxiety and Depression
-
-## 4d. Adjusted Analyses W/ Anxiety and Depression
 
 
 

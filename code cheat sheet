@@ -1,0 +1,6 @@
+R and Rmd Cheat Sheet!!!
+
+ggplot colors:
+- list: colors()
+- visual: scales::show_col(colors())
+
