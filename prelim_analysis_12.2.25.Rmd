@@ -78,7 +78,7 @@ age_df <- age_df |>
 #### Visualization
 
 Age Continuous Histogram
-```{r}
+```{r, warning=FALSE}
 ggplot(age_df, aes(x = patient_age)) +
   geom_histogram(aes(y = ..density..),
                  binwidth = 2, fill = "steelblue", color = "white")+
