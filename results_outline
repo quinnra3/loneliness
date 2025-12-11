@@ -1,0 +1,37 @@
+Results to Send to Dana and Zach:
+
+1. Table 1. Overall prevalence and prevalence by loneliness
+2. Prevalence of loneliness by total
+3. Mean total loneliness score
+4. Prevalence of loneliness by covariates
+5. Mean total loneliness score by covariates
+6. Regression model - loneliness dichotomous variable
+    I. Unadjusted (crude)
+      a. W/ Anxiety
+      b. W/ Depression
+      c. W/ Anxiety and Depression
+      d. W/O Anxiety
+      e. W/O Depression
+      f. W/O Anxiety and Depression
+    II. Adjusted
+      a. W/ Anxiety
+      b. W/ Depression
+      c. W/ Anxiety and Depression
+      d. W/O Anxiety
+      e. W/O Depression
+      f. W/O Anxiety and Depression
+7. Regression model - loneliness continuous variable
+    I.
+      a. W/ Anxiety
+      b. W/ Depression
+      c. W/ Anxiety and Depression
+      d. W/O Anxiety
+      e. W/O Depression
+      f. W/O Anxiety and Depression
+    II. Adjusted
+      a. W/ Anxiety
+      b. W/ Depression
+      c. W/ Anxiety and Depression
+      d. W/O Anxiety
+      e. W/O Depression
+      f. W/O Anxiety and Depression

@@ -10,6 +10,17 @@ Notes / Questions
         * item #63 (outgoing) on the data dictionary is not in the dataset?
         
   2. Outcomes:
+        Primary:
+        1) binge
+        2) any drug use (excluding tobacco)
+        
+        Supplemental:
+        - specific
+            past 3 months cannabis
+            elicit drug use
+              (heroin1, cocaine1, opioid, medanxiety, adhd1, illegal_drug1)
+              any elicit drug use 
+        
         a. binge alc, any sub. use not alc or marj. --> both for past 12mo., 3mo.
             - past 3 mo
                 (alcohol_1, 2, 3, 4? new variable for binge_drink?)
@@ -24,9 +35,11 @@ Notes / Questions
             - past 3 mo
                 meth and crack cocaine: (cocaine_1, not cocaine_2, or cocaine_3?)
                 heroin: (heroin_1, not heroin_2, or heroin_3?)
+                (tobacco - any/none)
+                (cigarette1)
                 
             - past 12 mo (drugs?)
-            
+                
             * why are we not using opiates?
             
         d. anxiety (gad_score)
@@ -40,7 +53,13 @@ Notes / Questions
               35-50 -> middle aged adults
               50+   -> older adults
               
+              also distribute by age first
+              
         b. sex (patient_gender)
         
         c. race/ethnicity (patient_race, patient_race_2?)
+
+
+
+(0 - NO, 1 - YES)
 

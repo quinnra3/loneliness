@@ -19,13 +19,21 @@ library(tidyverse)
 getwd()
 
 # load dataset (raw, NOT labels version)
-raw_LSU = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2025-12-03_1400.csv")
+raw_LSU = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2025-12-08_1344.csv")
+
 
 # check that everything worked
 skimr::skim(raw_LSU)
 names(raw_LSU)
 raw_LSU
 view(raw_LSU) # <- use to view file from RStudio
+
+
+## 1a. EXPLORATORY ANALYSIS
+
+# Age ('patient_age' in dataset)
+
+
 
 
 ## 2. CLEAN DATA
@@ -35,8 +43,7 @@ var_names = names(raw_LSU)
 view(var_names)
 class(var_names)
 var_names = data.frame(variable = var_names)
-
-write_csv(var_names, "var_names_table.csv")
+#write_csv(var_names, "var_names_table.csv")
 
 # select needed variables
 loneliness_df = raw_LSU |> 
@@ -149,8 +156,21 @@ loneliness_df = loneliness_df |>
     )
   
 
+## 3. Table 1 - Overall prevalence and prevalence by loneliness
 
-## 3. 
+## 3a. Prevalence of loneliness by Covariates
+
+
+
+## 4. Table 2 - Logistic Regression
+
+## 4a. Crude Analyses W/O Anxiety and Depression
+
+## 4b. Crude Analyses W/ Anxiety and Depression
+
+## 4c. Adjusted Analyses W/O Anxiety and Depression
+
+## 4d. Adjusted Analyses W/ Anxiety and Depression
 
 
 
