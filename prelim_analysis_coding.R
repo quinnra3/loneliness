@@ -56,8 +56,7 @@ age_df <- raw_LSU |>
         "18-29",
         "30-39",
         "40-49",
-        "50+"
-      )))
+        "50+")))
 
 # Age by category
 age_df <- age_df |> 
@@ -71,8 +70,7 @@ age_df <- age_df |>
       levels = c(
         "Young Adults (18-35)",
         "Middle Aged Adults (35-50)",
-        "Older Adults (50+)"
-      )))
+        "Older Adults (50+)")))
   
 # Age continuous Histogram
 ggplot(age_df, aes(x = patient_age)) +
@@ -122,23 +120,13 @@ loneliness_df = raw_LSU |>
     patient_gender,
     patient_ethnicity,
     patient_race,
-    patient_race_2,
     males,
     females,
     alcohol_1,
-    alcohol_2,
-    alcohol_3,
-    alcohol_4,
     marijuana_1,
-    marijuana_2,
-    marijuana_3,
     drugs,
     cocaine_1,
-    cocaine_2,
-    cocaine_3,
     heroin_1,
-    heroin_2,
-    heroin_3,
     in_tune,
     companion,
     turn_to,
@@ -169,41 +157,23 @@ view(loneliness_df)
 # recode dichot variables from 1(yes) 2(no) -> 1(yes) 0(no)
 loneliness_df = loneliness_df |> 
   mutate(
-    gender_dichot = case_when(
+    gender = case_when(
       patient_gender == 1 ~ 1,
       patient_gender == 2 ~ 0,
       TRUE                ~ NA),
-    alcohol_dichot = case_when(
+    alcohol = case_when(
       alcohol_1 == 1 ~ 1,
       alcohol_1 == 2 ~ 0,
-      alcohol_2 == 1 ~ 1,
-      alcohol_2 == 2 ~ 0,
-      alcohol_3 == 1 ~ 1,
-      alcohol_3 == 2 ~ 0,
-      alcohol_4 == 1 ~ 1,
-      alcohol_4 == 2 ~ 0,
       TRUE           ~ NA),
-    marijuana_dichot = case_when(
+    marijuana = case_when(
       marijuana_1 == 1 ~ 1,
       marijuana_1 == 2 ~ 0,
-      marijuana_2 == 1 ~ 1,
-      marijuana_2 == 2 ~ 0,
-      marijuana_3 == 1 ~ 1,
-      marijuana_3 == 2 ~ 0,
       TRUE             ~ NA),
-    cocaine_dichot = case_when(
+    cocaine = case_when(
       cocaine_1 == 1 ~ 1,
       cocaine_1 == 2 ~ 0,
-      cocaine_2 == 1 ~ 1,
-      cocaine_2 == 2 ~ 0,
-      cocaine_3 == 1 ~ 1,
-      cocaine_3 == 2 ~ 0,
       TRUE           ~ NA),
-    heroin_dichot = case_when(
-      heroin_1 == 1 ~ 1,
-      heroin_1 == 2 ~ 0,
-      heroin_1 == 1 ~ 1,
-      heroin_1 == 2 ~ 0,
+    heroin = case_when(
       heroin_1 == 1 ~ 1,
       heroin_1 == 2 ~ 0,
       TRUE          ~ NA)
