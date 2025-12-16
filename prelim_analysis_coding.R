@@ -249,13 +249,90 @@ table(clean_df$cigarette_1, clean_df$cigarette, useNA = "ifany")
 
 # LONELINESS SCALE SCORING
 
-# first, reverse coding for 'in_tune', 'group', 'common','outgoing', 'close_people', 'companionship', 'understand', 'talk_to', 'turn'
+# reverse coding for 'in_tune', 'group', 'common','outgoing','close_people', 'companionship', 'understand', 'talk_to', 'turn'
+# AND scoring total loneliness score
+
+score_df <- clean_df |> 
+  mutate(
+    in_tune_2 = 5 - in_tune,
+    group_2 = 5 - group,
+    common_2 = 5 - common,
+    outgoing_2 = 5 - outgoing,
+    close_people_2 = 5 - close_people,
+    companionship_2 = 5 - companionship,
+    understand_2 = 5 - understand,
+    talk_to_2 = 5 - talk_to,
+    turn_2 = 5 - turn,
+    
+    UCLA_total = 
+      in_tune_2 + group_2 + common_2 + 
+      outgoing_2 + close_people_2 + companionship_2 +
+      understand_2 + talk_to_2 + turn_2)
+
+# quick check!!!!!
 
 
 
-# total score for each participant (sum)
+# OR ALTERNATIVELY:
+score_df_2 <- clean_df |> 
+  mutate(
+    in_tune_2 = case_when(
+      in_tune == 1 ~ 4,
+      in_tune == 2 ~ 3,
+      in_tune == 3 ~ 2,
+      in_tune == 4 ~ 1),
+    group_2 = case_when(
+      group == 1 ~ 4,
+      group == 2 ~ 3,
+      group == 3 ~ 2,
+      group == 4 ~ 1),
+    common_2 = case_when(
+      common == 1 ~ 4,
+      common == 2 ~ 3,
+      common == 3 ~ 2,
+      common == 4 ~ 1),
+    outgoing_2 = case_when(
+      outgoing == 1 ~ 4,
+      outgoing == 2 ~ 3,
+      outgoing == 3 ~ 2,
+      outgoing == 4 ~ 1),
+    close_people_2 = case_when(
+      close_people == 1 ~ 4,
+      close_people == 2 ~ 3,
+      close_people == 3 ~ 2,
+      close_people == 4 ~ 1),
+    companionship_2 = case_when(
+      companionship == 1 ~ 4,
+      companionship == 2 ~ 3,
+      companionship == 3 ~ 2,
+      companionship == 4 ~ 1),
+    understand_2 = case_when(
+      understand == 1 ~ 4,
+      understand == 2 ~ 3,
+      understand == 3 ~ 2,
+      understand == 4 ~ 1),
+    talk_to_2 = case_when(
+      talk_to == 1 ~ 4,
+      talk_to == 2 ~ 3,
+      talk_to == 3 ~ 2,
+      talk_to == 4 ~ 1),
+    turn_2 = case_when(
+      turn == 1 ~ 4,
+      turn == 2 ~ 3,
+      turn == 3 ~ 2,
+      turn == 4 ~ 1),
+    
+    UCLA_total_2 = 
+      in_tune_2 + group_2 + common_2 + 
+      outgoing_2 + close_people_2 + companionship_2 +
+      understand_2 + talk_to_2 + turn_2)
+
+# quick check!!!!
 
 
+
+
+  
 
 ## 3. Table 1 - Overall prevalence and prevalence by loneliness
 
