@@ -19,7 +19,7 @@ library(tidyverse)
 getwd()
 
 # load dataset (raw, NOT labels version)
-raw_LSU = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2025-12-08_1344.csv")
+raw_LSU = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2025-12-16_1345.csv")
 
 
 # check that everything worked
@@ -120,22 +120,18 @@ loneliness_df = raw_LSU |>
     patient_gender,
     patient_ethnicity,
     patient_race,
-    males,
-    females,
-    alcohol_1,
-    marijuana_1,
-    drugs,
-    cocaine_1,
-    heroin_1,
+    patient_race_2,
+    gad_score,
+    phq_score,
     in_tune,
     companion,
     turn_to,
     alone,
     group,
+    outgoing,
     common,
     close,
     interest_ideas,
-    outgoing,
     close_people,
     left_out,
     relationship,
@@ -147,9 +143,25 @@ loneliness_df = raw_LSU |>
     around_you,
     talk_to,
     turn,
-    gad_score,
-    phq_score)
-
+    tobacco,
+    males,
+    females,
+    drugs,
+    meds,
+    cigarette_1,
+    alcohol_1,
+    alcohol_2,
+    marijuana_1,
+    cocaine_1,
+    heroin_1,
+    opioid_1,
+    med_anxiety_1,
+    adhd_1,
+    illegal_drug_1)
+    
+    
+    
+    
 view(loneliness_df)
 
 
