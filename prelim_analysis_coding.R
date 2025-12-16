@@ -62,8 +62,8 @@ age_df <- raw_LSU |>
 age_df <- age_df |> 
   mutate(
     age_cat = case_when(
-      patient_age >= 18 & patient_age <= 35 ~ "Young Adults (18-35)",
-      patient_age >= 35 & patient_age <= 50 ~ "Middle Aged Adults (35-50)",
+      patient_age >= 18 & patient_age <= 34 ~ "Young Adults (18-35)",
+      patient_age >= 35 & patient_age <= 49 ~ "Middle Aged Adults (35-50)",
       patient_age >= 50 ~ "Older Adults (50+)"),
     age_cat = factor(
       age_cat,
@@ -71,7 +71,7 @@ age_df <- age_df |>
         "Young Adults (18-35)",
         "Middle Aged Adults (35-50)",
         "Older Adults (50+)")))
-  
+
 # Age continuous Histogram
 ggplot(age_df, aes(x = patient_age)) +
   geom_histogram(aes(y = ..density..),
@@ -101,22 +101,20 @@ age_df |>
 
 
 
-
-
 ## 2. CLEAN DATA FOR PRELIM ANALYSIS
 
-# view var names
-var_names = names(raw_LSU)
+# view var names in 'age_df'
+var_names = names(age_df)
 view(var_names)
-class(var_names)
 var_names = data.frame(variable = var_names)
-#write_csv(var_names, "var_names_table.csv")
 
-# select needed variables
-loneliness_df = raw_LSU |> 
+# new data frame with selected variables
+clean_df <- age_df |> 
   select(
     record_id,
     patient_age,
+    age_cat,
+    age_decade,
     patient_gender,
     patient_ethnicity,
     patient_race,
@@ -159,23 +157,27 @@ loneliness_df = raw_LSU |>
     adhd_1,
     illegal_drug_1)
     
-    
-    
-    
-view(loneliness_df)
-
+view(clean_df)
 
 
 # recode dichot variables from 1(yes) 2(no) -> 1(yes) 0(no)
-loneliness_df = loneliness_df |> 
+clean_df = clean_df |> 
   mutate(
     gender = case_when(
       patient_gender == 1 ~ 1,
       patient_gender == 2 ~ 0,
       TRUE                ~ NA),
+    cigarette = case_when(
+      cigarette_1 == 1 ~ 1,
+      cigarette_1 == 2 ~ 0,
+      TRUE             ~ NA),
     alcohol = case_when(
       alcohol_1 == 1 ~ 1,
       alcohol_1 == 2 ~ 0,
+      TRUE           ~ NA),
+    alcohol2 = case_when(
+      alcohol_2 == 1 ~ 1,
+      alcohol_2 == 2 ~ 0,
       TRUE           ~ NA),
     marijuana = case_when(
       marijuana_1 == 1 ~ 1,
@@ -188,9 +190,72 @@ loneliness_df = loneliness_df |>
     heroin = case_when(
       heroin_1 == 1 ~ 1,
       heroin_1 == 2 ~ 0,
-      TRUE          ~ NA)
-    )
-  
+      TRUE          ~ NA),
+    opioid = case_when(
+      opioid_1 == 1 ~ 1,
+      opioid_1 == 2 ~ 0,
+      TRUE          ~ NA),
+    med_anxiety = case_when(
+      med_anxiety_1 == 1 ~ 1,
+      med_anxiety_1 == 2 ~ 0,
+      TRUE          ~ NA),
+    adhd = case_when(
+      adhd_1 == 1 ~ 1,
+      adhd_1 == 2 ~ 0,
+      TRUE        ~ NA),
+    illegal_drug = case_when(
+      illegal_drug_1 == 1 ~ 1,
+      illegal_drug_1 == 2 ~ 0,
+      TRUE        ~ NA))
+
+# quick check it worked
+clean_df |>
+  summarise(
+    gender_min = min(gender, na.rm = TRUE),
+    gender_max = max(gender, na.rm = TRUE),
+
+    cigarette_min = min(cigarette, na.rm = TRUE),
+    cigarette_max = max(cigarette, na.rm = TRUE),
+    
+    alcohol_min = min(alcohol, na.rm = TRUE),
+    alcohol_max = max(alcohol, na.rm = TRUE),
+    
+    alcohol2_min = min(alcohol2, na.rm = TRUE),
+    alcohol2_max = max(alcohol2, na.rm = TRUE),
+    
+    marijuana_min = min(marijuana, na.rm = TRUE),
+    marijuana_max = max(marijuana, na.rm = TRUE),
+    
+    cocaine_min = min(cocaine, na.rm = TRUE),
+    cocaine_max = max(cocaine, na.rm = TRUE),
+    
+    heroin_min = min(heroin, na.rm = TRUE),
+    heroin_max = max(heroin, na.rm = TRUE),
+    
+    opioid_min = min(opioid, na.rm = TRUE),
+    opioid_max = max(opioid, na.rm = TRUE),
+    
+    med_anxiety_min = min(med_anxiety, na.rm = TRUE),
+    med_anxiety_max = max(med_anxiety, na.rm = TRUE),
+    
+    adhd_min = min(adhd, na.rm = TRUE),
+    adhd_max = max(adhd, na.rm = TRUE),
+    
+    illegal_drug_min = min(illegal_drug, na.rm = TRUE),
+    illegal_drug_max = max(illegal_drug, na.rm = TRUE))
+
+table(clean_df$cigarette_1, clean_df$cigarette, useNA = "ifany")
+
+
+# LONELINESS SCALE SCORING
+
+# first, reverse coding for 'in_tune', 'group', 'common','outgoing', 'close_people', 'companionship', 'understand', 'talk_to', 'turn'
+
+
+
+# total score for each participant (sum)
+
+
 
 ## 3. Table 1 - Overall prevalence and prevalence by loneliness
 
