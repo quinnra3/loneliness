@@ -266,15 +266,37 @@ score_df <- clean_df |>
     talk_to_2 = 5 - talk_to,
     turn_2 = 5 - turn,
     
-    UCLA_total = 
+    lonely_total = 
       in_tune_2 + companion + turn_to + alone + group_2 + common_2 + 
       close + interest_ideas + outgoing_2 + close_people_2 + 
       left_out + relationship + knows_you + isolated + companionship_2 + 
       understand_2 + shy + around_you + talk_to_2 + turn_2)
 
 # quick check!!!!!
+names(score_df)
+view(score_df)
+readr::write_csv(score_df, "score_df.csv")
 
-
+score_df |>
+  summarise(
+    in_tune_2_min = min(in_tune_2, na.rm = TRUE),
+    in_tune_2_max = max(in_tune_2, na.rm = TRUE),
+    
+    group_2_min = min(group_2, na.rm = TRUE),
+    group_2_max = max(group_2, na.rm = TRUE),
+    
+    common_2_min = min(common_2, na.rm = TRUE),
+    common_2_max = max(common_2, na.rm = TRUE),
+    
+    outgoing_2_min = min(outgoing_2, na.rm = TRUE),
+    outgoing_2_max = max(outgoing_2, na.rm = TRUE),
+    
+    close_people_2_min = min(close_people_2, na.rm = TRUE),
+    close_people_2_max = max(close_people_2, na.rm = TRUE),
+    
+    lonely_min = min(lonely_total, na.rm = TRUE),
+    lonely_max = max(lonely_total, na.rm = TRUE),
+    lonely_missing = sum(is.na(lonely_total)))
 
 # OR ALTERNATIVELY:
 score_df_2 <- clean_df |> 
@@ -325,16 +347,73 @@ score_df_2 <- clean_df |>
       turn == 3 ~ 2,
       turn == 4 ~ 1),
     
-    UCLA_total = 
+    lonely_total = 
       in_tune_2 + companion + turn_to + alone + group_2 + common_2 + 
       close + interest_ideas + outgoing_2 + close_people_2 + 
       left_out + relationship + knows_you + isolated + companionship_2 + 
       understand_2 + shy + around_you + talk_to_2 + turn_2)
 
-# quick check!!!!
+# quick check!!!!!
+
+names(score_df_2)
+# view(score_df_2)
+# readr::write_csv(score_df, "score_df_2.csv")
+
+score_df_2 |>
+  summarise(
+    in_tune_2_min = min(in_tune_2, na.rm = TRUE),
+    in_tune_2_max = max(in_tune_2, na.rm = TRUE),
+    
+    group_2_min = min(group_2, na.rm = TRUE),
+    group_2_max = max(group_2, na.rm = TRUE),
+    
+    common_2_min = min(common_2, na.rm = TRUE),
+    common_2_max = max(common_2, na.rm = TRUE),
+    
+    outgoing_2_min = min(outgoing_2, na.rm = TRUE),
+    outgoing_2_max = max(outgoing_2, na.rm = TRUE),
+    
+    close_people_2_min = min(close_people_2, na.rm = TRUE),
+    close_people_2_max = max(close_people_2, na.rm = TRUE),
+    
+    lonely_min = min(lonely_total, na.rm = TRUE),
+    lonely_max = max(lonely_total, na.rm = TRUE),
+    lonely_missing = sum(is.na(lonely_total)))
+
+# loneliness score range: 20-80
+
+# Loneliness Score Exploration
+cutoff <- 43
+
+prev_tbl <- score_df |>
+  summarise(
+    N = n(),  # 298
+    lonely = sum(lonely_total >= cutoff, na.rm = TRUE),
+    prevalence = lonely / N)
+
+prev_tbl
+
+# check
+nrow(score_df) # N = 298
+sum(is.na(score_df$lonely_total)) # NAs total = 8
+
+mean_tbl <- score_df |> 
+  summarise(
+    N = n(), # 298
+    mean_total = mean(lonely_total, na.rm = TRUE),
+    sd_total = sd(lonely_total, na.rm = TRUE)) |> 
+  mutate(
+    lonely_total = sprintf("%0.2f (%0.2f)", mean_total, sd_total),
+    select(N, lonely_total))
 
 
-
+# lonely dichot variable creation
+score_df <- score_df |>
+  mutate(
+    loneliness_dichot = case_when(
+      UCLA_total >= cutoff ~ 1,
+      UCLA_total <  cutoff ~ 0,
+      TRUE ~ NA_real_))
 
 
 ## 3. Table 1 - Overall prevalence and prevalence by loneliness
@@ -342,15 +421,6 @@ score_df_2 <- clean_df |>
 
 
 ## 4. Table 2 - Logistic Regression
-
-
-
-
-
-
-
-
-
 
 
 

@@ -116,6 +116,15 @@ age_df |>
 
 
 
+```{r, include=FALSE, warning=FALSE, results='hide'}
+prev_tbl |>
+  mutate(prevalence = scales::percent(prevalence, accuracy = 0.1)) |>
+  knitr::kable(
+    col.names = c("N", "Lonely (UCLA_total ≥ 43)", "Prevalence"),
+    caption = "Prevalence of loneliness in the study sample.")
+
+
+```
 
 
 
