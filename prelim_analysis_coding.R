@@ -47,7 +47,7 @@ age_df <- raw_LSU |>
   mutate(
     age_decade = cut(
       patient_age,
-      breaks = c(18, 30, 40, 50, Inf),
+      breaks = c(18, 29, 39, 49, Inf),
       labels = c("18-29", "30-39", "40-49", "50+"),
       right = FALSE),
     age_decade = factor(
@@ -166,7 +166,7 @@ clean_df = clean_df |>
     gender = case_when(
       patient_gender == 1 ~ 1,
       patient_gender == 2 ~ 0,
-      TRUE                ~ NA),
+      TRUE                ~ NA), # <- are all these necessary?
     cigarette = case_when(
       cigarette_1 == 1 ~ 1,
       cigarette_1 == 2 ~ 0,
@@ -249,9 +249,11 @@ table(clean_df$cigarette_1, clean_df$cigarette, useNA = "ifany")
 
 # LONELINESS SCALE SCORING
 
-# reverse coding for 'in_tune', 'group', 'common','outgoing','close_people', 'companionship', 'understand', 'talk_to', 'turn'
-# AND scoring total loneliness score
+# reverse coding for 'in_tune', 'group', 'common','outgoing',
+#                    'close_people', 'companionship', 'understand', 'talk_to', 'turn'
+# scoring total loneliness score
 
+# first try
 score_df <- clean_df |> 
   mutate(
     in_tune_2 = 5 - in_tune,
@@ -265,9 +267,10 @@ score_df <- clean_df |>
     turn_2 = 5 - turn,
     
     UCLA_total = 
-      in_tune_2 + group_2 + common_2 + 
-      outgoing_2 + close_people_2 + companionship_2 +
-      understand_2 + talk_to_2 + turn_2)
+      in_tune_2 + companion + turn_to + alone + group_2 + common_2 + 
+      close + interest_ideas + outgoing_2 + close_people_2 + 
+      left_out + relationship + knows_you + isolated + companionship_2 + 
+      understand_2 + shy + around_you + talk_to_2 + turn_2)
 
 # quick check!!!!!
 
@@ -322,19 +325,20 @@ score_df_2 <- clean_df |>
       turn == 3 ~ 2,
       turn == 4 ~ 1),
     
-    UCLA_total_2 = 
-      in_tune_2 + group_2 + common_2 + 
-      outgoing_2 + close_people_2 + companionship_2 +
-      understand_2 + talk_to_2 + turn_2)
+    UCLA_total = 
+      in_tune_2 + companion + turn_to + alone + group_2 + common_2 + 
+      close + interest_ideas + outgoing_2 + close_people_2 + 
+      left_out + relationship + knows_you + isolated + companionship_2 + 
+      understand_2 + shy + around_you + talk_to_2 + turn_2)
 
 # quick check!!!!
 
 
 
 
-  
 
 ## 3. Table 1 - Overall prevalence and prevalence by loneliness
+
 
 
 ## 4. Table 2 - Logistic Regression
