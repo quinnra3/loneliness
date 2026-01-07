@@ -1,16 +1,20 @@
 ############################
 ## Prelim Analyses - Coding
-## 
 ############################
 
 ## Prelim Analysis Plan:
-## 1. LOAD
-## 2. CLEAN
-## 3. RECODE
-## 4. CALCULATE
-## 5. ANALYZE
+## 1. LOAD LIBRARIES AND IMPORT RAW DATA
+## 2. APPLY INCLUSION/EXCLUSION CRITERIA
+## 3. EXPLORATORY ANALYSES - AGE
+## 4. CLEANING/RECODING
+## 5. LONELINESS SCORING
+## 6. DESCRIPTIVES (TABLE 1S)
+## 7. MODELS (TABLE 2S)
 
-## 1. LOAD LIBRARIES; UPLOAD DATA
+
+# -------------------------------------
+# 1. LOAD LIBRARIES AND IMPORT RAW DATA
+# -------------------------------------
 
 # load libraries
 library(tidyverse)
@@ -19,20 +23,40 @@ library(tidyverse)
 getwd()
 
 # load dataset (raw, NOT labels version)
-raw_LSU = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2025-12-16_1345.csv")
+raw_LSU = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2026-01-07_1250.csv")
 
-
-# check that everything worked
+# check
 skimr::skim(raw_LSU)
 names(raw_LSU)
 raw_LSU
 view(raw_LSU) # <- use to view file from RStudio
 
 
-## 2. EXPLORATORY ANALYSIS
+# ---------------------------------------------
+# 2. APPLY INCLUSION/EXCLUSION CRITERIA
+# ---------------------------------------------
+
+analytic_df <- raw_LSU |> 
+  filter(
+    !(record_id %in% c(
+      105, 287, 289, 
+      296, 383, 393, 
+      126, 160, 361)))
+
+# Record IDs 105, 287, 289, 296, 383, 393 -> incomplete lonely scores -> excluded
+# Record IDs 126, 160, 361                -> age > 75                 -> excluded
+
+# check
+view(analytic_df)  
+nrow(raw_LSU) - nrow(analytic_df)
+
+
+# -----------------------------
+# 3. EXPLORATORY ANALYSES - AGE
+# -----------------------------
 
 # Age ('patient_age')
-raw_LSU |> 
+analytic_df |> 
   summarise(
     age_mean = mean(patient_age),
     age_sd = sd(patient_age))
@@ -43,11 +67,11 @@ geom_histogram()
 skimr::skim(raw_LSU, patient_age)
 
 # Age by decade
-age_df <- raw_LSU |> 
+age_df <- analytic_df |> 
   mutate(
     age_decade = cut(
       patient_age,
-      breaks = c(18, 29, 39, 49, Inf),
+      breaks = c(18, 30, 40, 50, Inf),
       labels = c("18-29", "30-39", "40-49", "50+"),
       right = FALSE),
     age_decade = factor(
@@ -58,19 +82,34 @@ age_df <- raw_LSU |>
         "40-49",
         "50+")))
 
+# check
+age_df |> 
+  count(age_decade, patient_age) |> 
+  arrange(patient_age)
+
+age_filter_df <- age_df |> 
+  filter(patient_age < 18 | patient_age > 75)
+view(age_filter_df)
+
+  
 # Age by category
 age_df <- age_df |> 
   mutate(
     age_cat = case_when(
-      patient_age >= 18 & patient_age <= 34 ~ "Young Adults (18-35)",
-      patient_age >= 35 & patient_age <= 49 ~ "Middle Aged Adults (35-50)",
+      patient_age >= 18 & patient_age <= 34 ~ "Young Adults (18-34)",
+      patient_age >= 35 & patient_age <= 49 ~ "Middle Aged Adults (35-49)",
       patient_age >= 50 ~ "Older Adults (50+)"),
     age_cat = factor(
       age_cat,
       levels = c(
-        "Young Adults (18-35)",
-        "Middle Aged Adults (35-50)",
+        "Young Adults (18-34)",
+        "Middle Aged Adults (35-49)",
         "Older Adults (50+)")))
+
+# check
+age_df |> 
+  count(age_cat, patient_age) |> 
+  arrange(patient_age)
 
 # Age continuous Histogram
 ggplot(age_df, aes(x = patient_age)) +
@@ -100,8 +139,9 @@ age_df |>
     max_age = max(patient_age))
 
 
-
-## 2. CLEAN DATA FOR PRELIM ANALYSIS
+# --------------------
+# 4. CLEANING/RECODING
+# --------------------
 
 # view var names in 'age_df'
 var_names = names(age_df)
@@ -156,17 +196,20 @@ clean_df <- age_df |>
     med_anxiety_1,
     adhd_1,
     illegal_drug_1)
-    
+
+# check
 view(clean_df)
+clean_df |> count(patient_gender, sort = TRUE)
+str(clean_df$patient_gender)
 
 
 # recode dichot variables from 1(yes) 2(no) -> 1(yes) 0(no)
-clean_df = clean_df |> 
+recode_df = clean_df |> 
   mutate(
     gender = case_when(
-      patient_gender == 1 ~ 1,
-      patient_gender == 2 ~ 0,
-      TRUE                ~ NA), # <- are all these necessary?
+      patient_gender == 1 ~ 0, # female '0' reference
+      patient_gender == 2 ~ 1, # male   '1'
+      TRUE                ~ NA), 
     cigarette = case_when(
       cigarette_1 == 1 ~ 1,
       cigarette_1 == 2 ~ 0,
@@ -208,8 +251,13 @@ clean_df = clean_df |>
       illegal_drug_1 == 2 ~ 0,
       TRUE        ~ NA))
 
-# quick check it worked
-clean_df |>
+# check
+view(recode_df)
+write_csv(recode_df, "recode_df_1.7.26.csv")
+table(clean_df$cigarette_1, recode_df$cigarette, useNA = "ifany")
+table(clean_df$patient_gender, recode_df$gender, useNA = "ifany")
+
+recode_df |>
   summarise(
     gender_min = min(gender, na.rm = TRUE),
     gender_max = max(gender, na.rm = TRUE),
@@ -244,17 +292,63 @@ clean_df |>
     illegal_drug_min = min(illegal_drug, na.rm = TRUE),
     illegal_drug_max = max(illegal_drug, na.rm = TRUE))
 
-table(clean_df$cigarette_1, clean_df$cigarette, useNA = "ifany")
+
+# ---------------------
+# 5. LONELINESS SCORING
+# ---------------------
+
+# lonely score questions:
+
+lonely_items <- c("in_tune","companion","turn_to","alone","group",
+                  "outgoing","common","close","interest_ideas","close_people",
+                  "left_out","relationship","knows_you","isolated","companionship",
+                  "understand","shy","around_you","talk_to","turn")
 
 
-# LONELINESS SCALE SCORING
+# ---------------------------------------------
+# 5a. IMPUTE MISSING QUESTIONS FOR 2 RECORD IDs
+# ---------------------------------------------
+record_ids <- c(98, 421)
 
-# reverse coding for 'in_tune', 'group', 'common','outgoing',
-#                    'close_people', 'companionship', 'understand', 'talk_to', 'turn'
-# scoring total loneliness score
+recode_df <- recode_df |> 
+  rowwise() |> 
+  mutate(
+    companionship = if_else(
+      record_id == 98,
+      round(mean(c(
+        in_tune, companion, turn_to, alone, group,
+             outgoing, common, close, interest_ideas, close_people,
+             left_out, relationship, knows_you, isolated, understand,
+             shy, around_you, talk_to, turn
+        ), na.rm = TRUE)),
+      companionship),
+    
+    left_out = if_else(
+      record_id == 421,
+      round(mean(c(
+        in_tune, companion, turn_to, alone, group,
+               outgoing, common, close, interest_ideas, close_people,
+               relationship, knows_you, isolated, companionship, understand,
+               shy, around_you, talk_to, turn
+        ), na.rm = TRUE)),
+      left_out)
+    ) |> 
+  ungroup()
 
-# first try
-score_df <- clean_df |> 
+# check
+recode_df |>
+  filter(record_id %in% c(98, 421)) |>
+  select(record_id, companionship, left_out)
+
+# ---------------------------------------------
+# 5b. REVERSE CODING:
+#     'in_tune', 'group', 'common','outgoing',
+#     'close_people', 'companionship', 'understand',
+#     'talk_to', 'turn'
+# ---------------------------------------------
+
+# METHOD 1 - preference
+score_df <- recode_df |> 
   mutate(
     in_tune_2 = 5 - in_tune,
     group_2 = 5 - group,
@@ -264,125 +358,68 @@ score_df <- clean_df |>
     companionship_2 = 5 - companionship,
     understand_2 = 5 - understand,
     talk_to_2 = 5 - talk_to,
-    turn_2 = 5 - turn,
-    
-    lonely_total = 
-      in_tune_2 + companion + turn_to + alone + group_2 + common_2 + 
-      close + interest_ideas + outgoing_2 + close_people_2 + 
-      left_out + relationship + knows_you + isolated + companionship_2 + 
-      understand_2 + shy + around_you + talk_to_2 + turn_2)
+    turn_2 = 5 - turn)
 
-# quick check!!!!!
+# check
 names(score_df)
 view(score_df)
-readr::write_csv(score_df, "score_df.csv")
+view(score_df |>
+       summarise(
+         in_tune_2_min = min(in_tune_2, na.rm = TRUE),
+         in_tune_2_max = max(in_tune_2, na.rm = TRUE),
+         
+         group_2_min = min(group_2, na.rm = TRUE),
+         group_2_max = max(group_2, na.rm = TRUE),
+         
+         common_2_min = min(common_2, na.rm = TRUE),
+         common_2_max = max(common_2, na.rm = TRUE),
+         
+         outgoing_2_min = min(outgoing_2, na.rm = TRUE),
+         outgoing_2_max = max(outgoing_2, na.rm = TRUE),
+         
+         close_people_2_min = min(close_people_2, na.rm = TRUE),
+         close_people_2_max = max(close_people_2, na.rm = TRUE)))
 
-score_df |>
-  summarise(
-    in_tune_2_min = min(in_tune_2, na.rm = TRUE),
-    in_tune_2_max = max(in_tune_2, na.rm = TRUE),
-    
-    group_2_min = min(group_2, na.rm = TRUE),
-    group_2_max = max(group_2, na.rm = TRUE),
-    
-    common_2_min = min(common_2, na.rm = TRUE),
-    common_2_max = max(common_2, na.rm = TRUE),
-    
-    outgoing_2_min = min(outgoing_2, na.rm = TRUE),
-    outgoing_2_max = max(outgoing_2, na.rm = TRUE),
-    
-    close_people_2_min = min(close_people_2, na.rm = TRUE),
-    close_people_2_max = max(close_people_2, na.rm = TRUE),
-    
-    lonely_min = min(lonely_total, na.rm = TRUE),
-    lonely_max = max(lonely_total, na.rm = TRUE),
-    lonely_missing = sum(is.na(lonely_total)))
 
-# OR ALTERNATIVELY:
-score_df_2 <- clean_df |> 
+# ---------------------------------
+# 5c. CALCULATE TOTAL LONELY SCORES
+# ---------------------------------
+
+score_df <- score_df|>
   mutate(
-    in_tune_2 = case_when(
-      in_tune == 1 ~ 4,
-      in_tune == 2 ~ 3,
-      in_tune == 3 ~ 2,
-      in_tune == 4 ~ 1),
-    group_2 = case_when(
-      group == 1 ~ 4,
-      group == 2 ~ 3,
-      group == 3 ~ 2,
-      group == 4 ~ 1),
-    common_2 = case_when(
-      common == 1 ~ 4,
-      common == 2 ~ 3,
-      common == 3 ~ 2,
-      common == 4 ~ 1),
-    outgoing_2 = case_when(
-      outgoing == 1 ~ 4,
-      outgoing == 2 ~ 3,
-      outgoing == 3 ~ 2,
-      outgoing == 4 ~ 1),
-    close_people_2 = case_when(
-      close_people == 1 ~ 4,
-      close_people == 2 ~ 3,
-      close_people == 3 ~ 2,
-      close_people == 4 ~ 1),
-    companionship_2 = case_when(
-      companionship == 1 ~ 4,
-      companionship == 2 ~ 3,
-      companionship == 3 ~ 2,
-      companionship == 4 ~ 1),
-    understand_2 = case_when(
-      understand == 1 ~ 4,
-      understand == 2 ~ 3,
-      understand == 3 ~ 2,
-      understand == 4 ~ 1),
-    talk_to_2 = case_when(
-      talk_to == 1 ~ 4,
-      talk_to == 2 ~ 3,
-      talk_to == 3 ~ 2,
-      talk_to == 4 ~ 1),
-    turn_2 = case_when(
-      turn == 1 ~ 4,
-      turn == 2 ~ 3,
-      turn == 3 ~ 2,
-      turn == 4 ~ 1),
-    
-    lonely_total = 
-      in_tune_2 + companion + turn_to + alone + group_2 + common_2 + 
+    lonely_total = (in_tune_2 + companion + turn_to + alone + group_2 + common_2 + 
       close + interest_ideas + outgoing_2 + close_people_2 + 
       left_out + relationship + knows_you + isolated + companionship_2 + 
-      understand_2 + shy + around_you + talk_to_2 + turn_2)
+      understand_2 + shy + around_you + talk_to_2 + turn_2))
 
-# quick check!!!!!
+# check
+view(score_df)
+view(score_df |>
+       summarise(
+         in_tune_2_min = min(in_tune_2, na.rm = TRUE),
+         in_tune_2_max = max(in_tune_2, na.rm = TRUE),
+         
+         group_2_min = min(group_2, na.rm = TRUE),
+         group_2_max = max(group_2, na.rm = TRUE),
+         
+         common_2_min = min(common_2, na.rm = TRUE),
+         common_2_max = max(common_2, na.rm = TRUE),
+         
+         outgoing_2_min = min(outgoing_2, na.rm = TRUE),
+         outgoing_2_max = max(outgoing_2, na.rm = TRUE),
+         
+         close_people_2_min = min(close_people_2, na.rm = TRUE),
+         close_people_2_max = max(close_people_2, na.rm = TRUE),
+         
+         lonely_min = min(lonely_total, na.rm = TRUE),
+         lonely_max = max(lonely_total, na.rm = TRUE)))
 
-names(score_df_2)
-# view(score_df_2)
-# readr::write_csv(score_df, "score_df_2.csv")
+# loneliness score range: 20-74
 
-score_df_2 |>
-  summarise(
-    in_tune_2_min = min(in_tune_2, na.rm = TRUE),
-    in_tune_2_max = max(in_tune_2, na.rm = TRUE),
-    
-    group_2_min = min(group_2, na.rm = TRUE),
-    group_2_max = max(group_2, na.rm = TRUE),
-    
-    common_2_min = min(common_2, na.rm = TRUE),
-    common_2_max = max(common_2, na.rm = TRUE),
-    
-    outgoing_2_min = min(outgoing_2, na.rm = TRUE),
-    outgoing_2_max = max(outgoing_2, na.rm = TRUE),
-    
-    close_people_2_min = min(close_people_2, na.rm = TRUE),
-    close_people_2_max = max(close_people_2, na.rm = TRUE),
-    
-    lonely_min = min(lonely_total, na.rm = TRUE),
-    lonely_max = max(lonely_total, na.rm = TRUE),
-    lonely_missing = sum(is.na(lonely_total)))
+# -----------------
+# 5d. DICHOT LONELY
+# -----------------
 
-# loneliness score range: 20-80
-
-# Loneliness Score Exploration
 cutoff <- 43
 
 prev_tbl <- score_df |>
@@ -416,11 +453,27 @@ score_df <- score_df |>
       TRUE ~ NA_real_))
 
 
-## 3. Table 1 - Overall prevalence and prevalence by loneliness
+
+# --------------------------
+# 6. DESCRIPTIVES (TABLE 1S)
+# --------------------------
 
 
 
-## 4. Table 2 - Logistic Regression
+# --------------------
+# 7. MODELS (TABLE 2S)
+# --------------------
+
+
+
+
+
+
+
+
+
+
+
 
 
 
