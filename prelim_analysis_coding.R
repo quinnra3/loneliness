@@ -23,20 +23,20 @@ library(tidyverse)
 getwd()
 
 # load dataset (raw, NOT labels version)
-raw_LSU = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2026-01-07_1250.csv")
+raw_data = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2026-01-07_1250.csv")
 
 # check
-skimr::skim(raw_LSU)
-names(raw_LSU)
-raw_LSU
-view(raw_LSU) # <- use to view file from RStudio
+skimr::skim(raw_data)
+names(raw_data)
+raw_data
+view(raw_data) # <- use to view file from RStudio
 
 
 # ---------------------------------------------
 # 2. APPLY INCLUSION/EXCLUSION CRITERIA
 # ---------------------------------------------
 
-analytic_df <- raw_LSU |> 
+clean_df <- raw_data |> 
   filter(
     !(record_id %in% c(
       105, 287, 289, 
@@ -47,8 +47,9 @@ analytic_df <- raw_LSU |>
 # Record IDs 126, 160, 361                -> age > 75                 -> excluded
 
 # check
-view(analytic_df)  
-nrow(raw_LSU) - nrow(analytic_df)
+view(clean_df)  
+nrow(raw_data) - nrow(clean_df) # should be 9
+
 
 
 # -----------------------------
@@ -56,18 +57,18 @@ nrow(raw_LSU) - nrow(analytic_df)
 # -----------------------------
 
 # Age ('patient_age')
-analytic_df |> 
+clean_df |> 
   summarise(
     age_mean = mean(patient_age),
     age_sd = sd(patient_age))
     
-ggplot(data = raw_LSU, aes(x = patient_age))+
+ggplot(data = raw_data, aes(x = patient_age))+
 geom_histogram()
 
-skimr::skim(raw_LSU, patient_age)
+skimr::skim(raw_data, patient_age)
 
 # Age by decade
-age_df <- analytic_df |> 
+clean_df <- clean_df |> 
   mutate(
     age_decade = cut(
       patient_age,
@@ -83,17 +84,17 @@ age_df <- analytic_df |>
         "50+")))
 
 # check
-age_df |> 
+clean_df |> 
   count(age_decade, patient_age) |> 
   arrange(patient_age)
 
-age_filter_df <- age_df |> 
+clean_df_check <- clean_df |> 
   filter(patient_age < 18 | patient_age > 75)
-view(age_filter_df)
+view(clean_df_check) # should be 0/none
 
   
 # Age by category
-age_df <- age_df |> 
+clean_df <- clean_df |> 
   mutate(
     age_cat = case_when(
       patient_age >= 18 & patient_age <= 34 ~ "Young Adults (18-34)",
@@ -107,29 +108,29 @@ age_df <- age_df |>
         "Older Adults (50+)")))
 
 # check
-age_df |> 
+clean_df |> 
   count(age_cat, patient_age) |> 
   arrange(patient_age)
 
 # Age continuous Histogram
-ggplot(age_df, aes(x = patient_age)) +
+ggplot(clean_df, aes(x = patient_age)) +
   geom_histogram(aes(y = ..density..),
                  binwidth = 2, fill = "steelblue", color = "white")+
   geom_density(alpha = .2, fill = "navy") +
   labs(title = "Distribution of Participant Age", x = "Participant Age", y = "Count")
 
 # Age by categories (18-35, 35-50, 50+)
-ggplot(age_df, aes(x = age_cat)) + 
+ggplot(clean_df, aes(x = age_cat)) + 
   geom_bar(fill = "grey36") +
   labs(title = "Participants Grouped by age_cat")
 
 # Age by decade
-ggplot(age_df, aes(x = age_decade)) + 
+ggplot(clean_df, aes(x = age_decade)) + 
   geom_bar(fill = "maroon") +
   labs(title = "Participants Grouped by Decade")
 
-# Continuous Age Summary
-age_df |> 
+# Continuous Age 'patient_age' Summary
+clean_df |> 
   summarise(
     mean_age = mean(patient_age),
     sd_age = sd(patient_age),
@@ -143,13 +144,13 @@ age_df |>
 # 4. CLEANING/RECODING
 # --------------------
 
-# view var names in 'age_df'
-var_names = names(age_df)
+# view var names in 'clean_df'
+var_names = names(clean_df)
 view(var_names)
 var_names = data.frame(variable = var_names)
 
 # new data frame with selected variables
-clean_df <- age_df |> 
+clean_df <- clean_df |> 
   select(
     record_id,
     patient_age,
@@ -159,7 +160,22 @@ clean_df <- age_df |>
     patient_ethnicity,
     patient_race,
     patient_race_2,
+    nervous_2,
+    worrying_2,
+    worry_2,
+    relax_2,
+    restless_2,
+    annoyed_2,
+    afraid_2,
     gad_score,
+    interest,
+    down,
+    sleep,
+    relax,
+    appetite,
+    bad,
+    concentrate,
+    fidget,
     phq_score,
     in_tune,
     companion,
@@ -204,7 +220,7 @@ str(clean_df$patient_gender)
 
 
 # recode dichot variables from 1(yes) 2(no) -> 1(yes) 0(no)
-recode_df = clean_df |> 
+clean_df <- clean_df |> 
   mutate(
     gender = case_when(
       patient_gender == 1 ~ 0, # female '0' reference
@@ -252,12 +268,12 @@ recode_df = clean_df |>
       TRUE        ~ NA))
 
 # check
-view(recode_df)
-write_csv(recode_df, "recode_df_1.7.26.csv")
-table(clean_df$cigarette_1, recode_df$cigarette, useNA = "ifany")
-table(clean_df$patient_gender, recode_df$gender, useNA = "ifany")
+view(clean_df)
+# write_csv(clean_df, "clean_df_1.7.26.csv")
+table(clean_df$cigarette_1, clean_df$cigarette, useNA = "ifany")
+table(clean_df$patient_gender, clean_df$gender, useNA = "ifany")
 
-recode_df |>
+clean_df |>
   summarise(
     gender_min = min(gender, na.rm = TRUE),
     gender_max = max(gender, na.rm = TRUE),
@@ -293,6 +309,46 @@ recode_df |>
     illegal_drug_max = max(illegal_drug, na.rm = TRUE))
 
 
+# -------------------------
+# 4b. PHQ/GAD SCORE DICHOTS
+# -------------------------
+
+clean_df <- clean_df |> 
+  rowwise() |> 
+  mutate(
+    gad_score = if_else(
+      record_id %in% c(61, 275),
+      sum(c(nervous_2, worrying_2, worry_2, relax_2, restless_2, annoyed_2, afraid_2), na.rm = FALSE),
+      gad_score),
+    
+    phq_score = if_else(
+      record_id %in% c(61, 275),
+      sum(c(interest, down, sleep, relax, appetite, bad, concentrate, fidget), na.rm = FALSE),
+      phq_score)) |> 
+  ungroup()
+
+clean_df <- clean_df |> 
+  mutate(
+    gad_dichot = case_when(
+      gad_score >= 10 ~ 1,
+      gad_score < 10 ~ 0,
+      TRUE ~ NA_real_),
+    
+    phq_dichot = case_when(
+      phq_score >= 10 ~ 1,
+      phq_score < 10 ~ 0,
+      TRUE ~ NA_real_))
+
+view(clean_df)
+# write_csv(clean_df, "outputs/clean_df_1.8.26.csv")
+table(clean_df$phq_score, clean_df$phq_dichot, useNA = "ifany")
+table(clean_df$gad_score, clean_df$gad_dichot, useNA = "ifany")
+
+
+
+
+
+
 # ---------------------
 # 5. LONELINESS SCORING
 # ---------------------
@@ -310,7 +366,7 @@ lonely_items <- c("in_tune","companion","turn_to","alone","group",
 # ---------------------------------------------
 record_ids <- c(98, 421)
 
-recode_df <- recode_df |> 
+clean_df <- clean_df |> 
   rowwise() |> 
   mutate(
     companionship = if_else(
@@ -336,19 +392,19 @@ recode_df <- recode_df |>
   ungroup()
 
 # check
-recode_df |>
+clean_df |>
   filter(record_id %in% c(98, 421)) |>
   select(record_id, companionship, left_out)
 
-# ---------------------------------------------
+# --------------------------------------------------
 # 5b. REVERSE CODING:
 #     'in_tune', 'group', 'common','outgoing',
 #     'close_people', 'companionship', 'understand',
 #     'talk_to', 'turn'
-# ---------------------------------------------
+# --------------------------------------------------
 
 # METHOD 1 - preference
-score_df <- recode_df |> 
+score_df <- clean_df |> 
   mutate(
     in_tune_2 = 5 - in_tune,
     group_2 = 5 - group,
@@ -381,13 +437,13 @@ view(score_df |>
          close_people_2_max = max(close_people_2, na.rm = TRUE)))
 
 
-# ---------------------------------
-# 5c. CALCULATE TOTAL LONELY SCORES
-# ---------------------------------
+# -----------------------------------------------------------------------------
+# 5c. CALCULATE TOTAL LONELY SCORES (continuous lonely variable, 'lonely_cont')
+# -----------------------------------------------------------------------------
 
 score_df <- score_df|>
   mutate(
-    lonely_total = (in_tune_2 + companion + turn_to + alone + group_2 + common_2 + 
+    lonely_cont = (in_tune_2 + companion + turn_to + alone + group_2 + common_2 + 
       close + interest_ideas + outgoing_2 + close_people_2 + 
       left_out + relationship + knows_you + isolated + companionship_2 + 
       understand_2 + shy + around_you + talk_to_2 + turn_2))
@@ -411,10 +467,20 @@ view(score_df |>
          close_people_2_min = min(close_people_2, na.rm = TRUE),
          close_people_2_max = max(close_people_2, na.rm = TRUE),
          
-         lonely_min = min(lonely_total, na.rm = TRUE),
-         lonely_max = max(lonely_total, na.rm = TRUE)))
+         lonely_min = min(lonely_cont, na.rm = TRUE),
+         lonely_max = max(lonely_cont, na.rm = TRUE))) 
 
 # loneliness score range: 20-74
+
+# lonely_cont summary
+score_df |> 
+  summarise(
+    mean_lonely = mean(lonely_cont),
+    sd_lonely = sd(lonely_cont),
+    median_lonely = median(lonely_cont),
+    IQR_lonely = IQR(lonely_cont),
+    min_lonely = min(lonely_cont),
+    max_lonely = max(lonely_cont))
 
 # -----------------
 # 5d. DICHOT LONELY
@@ -422,46 +488,75 @@ view(score_df |>
 
 cutoff <- 43
 
+score_df <- score_df |>
+  mutate(
+    lonely_dichot = case_when(
+      lonely_cont >= 43 ~ 1, # is this right?
+      lonely_cont <  43 ~ 0,
+      TRUE ~ NA_real_))
+
+# check
+score_df |> 
+  summarise(
+    lonely_dichot_min = min(lonely_dichot, na.rm = TRUE),
+    lonely_dichot_max = max(lonely_dichot, na.rm = TRUE))
+
+view(score_df)
+
+# write_csv(score_df, "outputs/score_df_1.7.26.csv")
+
+score_df |> 
+  summarise(
+    mean_lonely_dichot = mean(lonely_dichot),
+    sd_lonely_dichot = sd(lonely_dichot),
+    median_lonely_dichot = median(lonely_dichot),
+    min_lonely_dichot = min(lonely_dichot),
+    max_lonely_dichot = max(lonely_dichot))
+
+table(score_df$lonely_cont, score_df$lonely_dichot, useNA = "ifany")
+
+# -----------------------------
+# 5e. EXPLORATION LONELY SCORES
+# -----------------------------
+
+# Loneliness Prevalence for entire sample
 prev_tbl <- score_df |>
   summarise(
-    N = n(),  # 298
-    lonely = sum(lonely_total >= cutoff, na.rm = TRUE),
+    N = n(),  # n=296
+    lonely = sum(lonely_cont >= 43, na.rm = TRUE),
     prevalence = lonely / N)
 
 prev_tbl
 
 # check
-nrow(score_df) # N = 298
-sum(is.na(score_df$lonely_total)) # NAs total = 8
+nrow(score_df) # n = 296
+sum(is.na(score_df$lonely_cont)) # should be 0
 
+# Loneliness Average for entire sample
 mean_tbl <- score_df |> 
   summarise(
-    N = n(), # 298
-    mean_total = mean(lonely_total, na.rm = TRUE),
-    sd_total = sd(lonely_total, na.rm = TRUE)) |> 
+    N = n(), # 296
+    mean_total = mean(lonely_cont, na.rm = TRUE),
+    sd_total = sd(lonely_cont, na.rm = TRUE)) |> 
   mutate(
-    lonely_total = sprintf("%0.2f (%0.2f)", mean_total, sd_total),
-    select(N, lonely_total))
+    lonely_cont = sprintf("%0.2f (%0.2f)", mean_total, sd_total))
+   # select(N, lonely_cont))
 
-
-# lonely dichot variable creation
-score_df <- score_df |>
-  mutate(
-    loneliness_dichot = case_when(
-      UCLA_total >= cutoff ~ 1,
-      UCLA_total <  cutoff ~ 0,
-      TRUE ~ NA_real_))
-
-
+str(score_df$lonely_cont)
+view(mean_tbl)
 
 # --------------------------
-# 6. DESCRIPTIVES (TABLE 1S)
+# 6. DESCRIPTIVES (TABLE 1s)
 # --------------------------
+
+## Table 1. Sample characteristics of ED patients (N=X)
+
+
 
 
 
 # --------------------
-# 7. MODELS (TABLE 2S)
+# 7. MODELS (TABLE 2s)
 # --------------------
 
 
