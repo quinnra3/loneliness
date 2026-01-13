@@ -345,6 +345,109 @@ table(clean_df$phq_score, clean_df$phq_dichot, useNA = "ifany")
 table(clean_df$gad_score, clean_df$gad_dichot, useNA = "ifany")
 
 
+# ---------------------
+# 4c. NEW RACE VARIABLE
+# ---------------------
+
+clean_df <- clean_df |> 
+  mutate(
+    new_race = case_when(
+      patient_ethnicity == 1 ~ 1, # Hispanic/Latino (any race)
+      patient_ethnicity == 2 & patient_race == 1 ~ 2, # White, Non-Hispanic
+      patient_ethnicity == 2 & patient_race == 2 ~ 3, # Black/African American, Non-Hispanic
+      patient_ethnicity == 2 & patient_race %in% c(3,4) ~ 4, # Asian or AI/AN
+      TRUE ~ NA_real_),
+    
+    new_race_f = factor(
+      new_race,
+      levels = c(1,2,3,4),
+      labels = c(
+        "Hispanic/Latino",
+        "White, Non-Hispanic",
+        "Black/African American/Non-Hispanic",
+        "Asian or American Indian/Alaskan Native")))
+  
+# check
+table(clean_df$new_race, useNA = "ifany")
+table(clean_df$new_race_f, useNA = "ifany")
+write_csv(clean_df, "outputs/clean_df_1.13.26.csv")
+
+
+## 13 NAs - discuss with Zach
+
+
+# -----------------------------
+# 4d. NEW ILICIT DRUGS VARIABLE
+# -----------------------------
+
+clean_df <- clean_df |> 
+  mutate(
+    ilicit_drug = as.integer(
+      rowSums(across(c(
+        cocaine, heroin, opioid, 
+        med_anxiety, adhd, illegal_drug))) > 0
+    ))
+
+# check
+clean_df |>
+  summarise(
+    ilicit_drug_min = min(ilicit_drug, na.rm = TRUE),
+    ilicit_drug_max = max(ilicit_drug, na.rm = TRUE))
+
+table(clean_df$ilicit_drug)
+view(clean_df)
+# write_csv(clean_df, "outputs/clean_df_1.13.26.csv")
+
+
+# -----------------------
+# 4e. NAs for 'alcohol_2'
+# -----------------------
+
+clean_df <- clean_df |> 
+  mutate(alcohol2 = replace_na(alcohol2, 0))
+
+# check
+view(clean_df)
+
+
+# ---------------------------------
+# 4f. 12-MONTH SUBSTANCE USE DICHOT
+# ---------------------------------
+
+str(clean_df$tobacco)
+unique(clean_df$tobacco)
+table(clean_df$tobacco, useNA = "ifany")
+
+clean_df <- clean_df |> 
+  mutate(
+    tobacco_dich = case_when(tobacco %in% 1:4 ~ 1,
+                             tobacco == 5     ~ 0,
+                             TRUE             ~ NA_real_),
+    
+    males_dich = case_when(males %in% 1:4 ~ 1,
+                           males == 5     ~ 0,
+                             TRUE         ~ NA_real_),
+    
+    females_dich = case_when(females %in% 1:4 ~ 1,
+                             females == 5     ~ 0,
+                             TRUE             ~ NA_real_),
+    
+    drugs_dich = case_when(drugs %in% 1:4 ~ 1,
+                           drugs == 5     ~ 0,
+                             TRUE         ~ NA_real_),
+    
+    meds_dich = case_when(meds %in% 1:4 ~ 1,
+                          meds == 5     ~ 0,
+                             TRUE       ~ NA_real_))
+
+# check
+table(clean_df$tobacco, clean_df$tobacco_dich, useNA = "ifany")
+table(clean_df$males, clean_df$males_dich, useNA = "ifany")
+table(clean_df$females, clean_df$females_dich, useNA = "ifany")
+table(clean_df$drugs, clean_df$drugs_dich, useNA = "ifany")
+table(clean_df$meds, clean_df$meds_dich, useNA = "ifany")
+
+view(clean_df)
 
 
 
@@ -359,7 +462,6 @@ lonely_items <- c("in_tune","companion","turn_to","alone","group",
                   "outgoing","common","close","interest_ideas","close_people",
                   "left_out","relationship","knows_you","isolated","companionship",
                   "understand","shy","around_you","talk_to","turn")
-
 
 # ---------------------------------------------
 # 5a. IMPUTE MISSING QUESTIONS FOR 2 RECORD IDs
@@ -503,8 +605,6 @@ score_df |>
 
 view(score_df)
 
-# write_csv(score_df, "outputs/score_df_1.7.26.csv")
-
 score_df |> 
   summarise(
     mean_lonely_dichot = mean(lonely_dichot),
@@ -549,23 +649,76 @@ view(mean_tbl)
 # 6. DESCRIPTIVES (TABLE 1s)
 # --------------------------
 
-## Table 1. Sample characteristics of ED patients (N=X)
+# ----------------
+# 6a. DESCRIPTIVES
+# ----------------
+# exposure distributions
+table(score_df$lonely_cont, useNA = "ifany")
+prop.table(table(score_df$lonely_cont))
+
+# outcome distributions
+lapply(
+  clean_df[c("tobacco_dich", "males_dich", "females_dich", "drugs_dich", "meds_dich")],
+  table,
+  useNA = "ifany")
+### ^ why meds_dich has 1 NA??
 
 
+# unadjusted cross-tabs
 
 
+# --------------------------------------------------------
+# 6b. TABLE 1 - Sample characteristics of ED patients (N=X) 
+# --------------------------------------------------------
+
+# totals
+n_total <- nrow(score_df)
+n_none_mild <- sum(score_df$lonely_dichot == 0, na.rm = TRUE)
+n_mod_high <- sum(score_df$lonely_dichot == 1, na.rm = TRUE)
+
+# Sex 'gender'
+total_gender <- table(score_df$gender)
+prop.table(total_gender)*100
+
+tab_gender <- table(score_df$gender, score_df$lonely_dichot)
+tab_gender
+prop.table(tab_gender, margin = 2)*100
+
+chisq.test(tab_gender)$p.value
 
 # --------------------
 # 7. MODELS (TABLE 2s)
 # --------------------
 
+# --------------------
+# 7a. UNADJUSTED
+# --------------------
 
+# exposure:   lonely_dich, lonely_cont
+# outcome:    tobacco_dich, males_dich, females_dich, drugs_dich, meds_dich
+# covariates: patient_age (cont), age_cat, patient_gender, new_race
 
+model_tobacco_unadj <- glm(
+  tobacco_dich ~ lonely_cont,
+  data = score_df,
+  family = binomial
+)
+summary(model_tobacco_unadj)
+               
+# convert to OR
+exp(cbind(
+  OR = coef(model_tobacco_unadj),
+  confint(model_tobacco_unadj)
+))
 
+# ------------
+# 7b. ADJUSTED
+# ------------
 
-
-
-
+model_tobacco_adj <- glm(
+  tobacco_dich ~ lonely_cont + age + sex + new_race,
+  data = clean_df,
+  family = binomial)
 
 
 
