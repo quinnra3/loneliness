@@ -112,6 +112,9 @@ clean_df |>
   count(age_cat, patient_age) |> 
   arrange(patient_age)
 
+table(clean_df$age_cat, useNA = "ifany")
+
+
 # Age continuous Histogram
 ggplot(clean_df, aes(x = patient_age)) +
   geom_histogram(aes(y = ..density..),
@@ -364,7 +367,7 @@ clean_df <- clean_df |>
       labels = c(
         "Hispanic/Latino",
         "White, Non-Hispanic",
-        "Black/African American/Non-Hispanic",
+        "Black/African American, Non-Hispanic",
         "Asian or American Indian/Alaskan Native")))
   
 # check
@@ -385,18 +388,11 @@ clean_df <- clean_df |>
     ilicit_drug = as.integer(
       rowSums(across(c(
         cocaine, heroin, opioid, 
-        med_anxiety, adhd, illegal_drug))) > 0
-    ))
+        med_anxiety, adhd, illegal_drug))) > 0))
 
 # check
-clean_df |>
-  summarise(
-    ilicit_drug_min = min(ilicit_drug, na.rm = TRUE),
-    ilicit_drug_max = max(ilicit_drug, na.rm = TRUE))
-
 table(clean_df$ilicit_drug)
-view(clean_df)
-# write_csv(clean_df, "outputs/clean_df_1.13.26.csv")
+write_csv(clean_df, "outputs/clean_df_1.14.26.csv")
 
 
 # -----------------------
@@ -593,9 +589,14 @@ cutoff <- 43
 score_df <- score_df |>
   mutate(
     lonely_dichot = case_when(
-      lonely_cont >= 43 ~ 1, # is this right?
+      lonely_cont >= 43 ~ 1,
       lonely_cont <  43 ~ 0,
-      TRUE ~ NA_real_))
+      TRUE ~ NA_real_),
+    
+    lonely_dichot = factor(
+      lonely_dichot,
+      levels = c(0, 1),
+      labels = c("None/Mild", "Mod/High")))
 
 # check
 score_df |> 
@@ -604,14 +605,6 @@ score_df |>
     lonely_dichot_max = max(lonely_dichot, na.rm = TRUE))
 
 view(score_df)
-
-score_df |> 
-  summarise(
-    mean_lonely_dichot = mean(lonely_dichot),
-    sd_lonely_dichot = sd(lonely_dichot),
-    median_lonely_dichot = median(lonely_dichot),
-    min_lonely_dichot = min(lonely_dichot),
-    max_lonely_dichot = max(lonely_dichot))
 
 table(score_df$lonely_cont, score_df$lonely_dichot, useNA = "ifany")
 
@@ -656,7 +649,8 @@ view(mean_tbl)
 table(score_df$lonely_cont, useNA = "ifany")
 prop.table(table(score_df$lonely_cont))
 
-# outcome distributions
+## outcome distributions
+# 12-month
 lapply(
   clean_df[c("tobacco_dich", "males_dich", "females_dich", "drugs_dich", "meds_dich")],
   table,
@@ -673,18 +667,129 @@ lapply(
 
 # totals
 n_total <- nrow(score_df)
-n_none_mild <- sum(score_df$lonely_dichot == 0, na.rm = TRUE)
-n_mod_high <- sum(score_df$lonely_dichot == 1, na.rm = TRUE)
+n_none_mild <- sum(score_df$lonely_dichot == "None/Mild", na.rm = TRUE)
+n_mod_high  <- sum(score_df$lonely_dichot == "Mod/High", na.rm = TRUE)
 
-# Sex 'gender'
+## Sex 'gender'
+# total
 total_gender <- table(score_df$gender)
 prop.table(total_gender)*100
 
+# stratified
 tab_gender <- table(score_df$gender, score_df$lonely_dichot)
-tab_gender
 prop.table(tab_gender, margin = 2)*100
 
-chisq.test(tab_gender)$p.value
+# chi-square
+chisq.test(tab_gender)$p.value # OR
+chisq.test(table(score_df$gender, score_df$lonely_dichot))
+
+
+## Age 'age_cat'
+# total
+total_age <- table(score_df$age_cat)
+prop.table(total_age)*100
+
+# stratified
+tab_age   <- table(score_df$age_cat, score_df$lonely_dichot)
+prop.table(tab_age, margin = 2)*100
+
+# chi-square
+chisq.test(table(score_df$age_cat, score_df$lonely_dichot))
+ 
+
+## Race/Ethnicity 'new_race'
+# total
+total_race <- table(score_df$new_race)
+prop.table(total_race)*100
+
+# stratified
+tab_race <- table(score_df$new_race, score_df$lonely_dichot)
+prop.table(tab_race, margin = 2)*100
+
+# chi-sq
+chisq.test(table(score_df$age_cat, score_df$lonely_dichot))
+
+
+## Anxiety 'gad_dichot'
+# total
+total_anxiety <- table(score_df$gad_dichot)
+prop.table(total_anxiety)*100
+
+# stratified
+tab_anxiety <- table(score_df$gad_dichot, score_df$lonely_dichot)
+prop.table(tab_anxiety, margin = 2)*100
+
+# chi-sq
+chisq.test(table(score_df$gad_dichot, score_df$lonely_dichot))
+
+
+## Depression 'phq_dichot'
+# total
+total_dep <- table(score_df$phq_dichot)
+prop.table(total_dep)*100
+
+# stratified
+tab_dep <- table(score_df$phq_dichot, score_df$lonely_dichot)
+prop.table(tab_dep, margin = 2)*100
+
+# chi-sq
+chisq.test(table(score_df$phq_dichot, score_df$lonely_dichot))
+
+
+## Cigarette Use 'cigarette'
+# total
+total_cig <- table(score_df$cigarette)
+prop.table(total_cig)*100
+
+# stratified
+tab_cig <- table(score_df$cigarette, score_df$lonely_dichot)
+prop.table(tab_cig, margin = 2)*100
+
+# chi-sq
+chisq.test(table(score_df$cigarette, score_df$lonely_dichot))
+
+
+## Binge Drink 'alcohol2'
+# total
+total_alc <- table(score_df$alcohol2)
+prop.table(total_alc)*100
+
+# stratified
+tab_alc <- table(score_df$alcohol2, score_df$lonely_dichot)
+prop.table(tab_alc, margin = 2)*100
+
+# chi-sq
+chisq.test(table(score_df$cigarette, score_df$lonely_dichot))
+
+
+## Cannabis 'marijuana'
+# total
+total_cannabis <- table(score_df$marijuana)
+prop.table(total_cannabis)*100
+
+# stratified
+tab_can <- table(score_df$marijuana, score_df$lonely_dichot)
+prop.table(tab_can, margin = 2)*100
+
+# chi-sq
+chisq.test(table(score_df$marijuana, score_df$lonely_dichot))
+
+
+## Ilicit 'ilicit_drug'
+# total
+total_ilicit <- table(score_df$ilicit_drug)
+prop.table(total_ilicit)*100
+
+# stratified
+tab_ilicit <- table(score_df$ilicit_drug, score_df$lonely_dichot)
+prop.table(tab_ilicit, margin = 2)*100
+
+# chi-sq
+chisq.test(table(score_df$ilicit_drug, score_df$lonely_dichot))
+
+
+
+
 
 # --------------------
 # 7. MODELS (TABLE 2s)
