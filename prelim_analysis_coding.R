@@ -392,7 +392,7 @@ clean_df <- clean_df |>
 
 # check
 table(clean_df$ilicit_drug)
-write_csv(clean_df, "outputs/clean_df_1.14.26.csv")
+write_csv(clean_df, "outputs/clean_df_1.15.26.csv")
 
 
 # -----------------------
@@ -442,6 +442,8 @@ table(clean_df$males, clean_df$males_dich, useNA = "ifany")
 table(clean_df$females, clean_df$females_dich, useNA = "ifany")
 table(clean_df$drugs, clean_df$drugs_dich, useNA = "ifany")
 table(clean_df$meds, clean_df$meds_dich, useNA = "ifany")
+
+## ^ why meds 1 NA??? check more closely
 
 view(clean_df)
 
@@ -550,21 +552,6 @@ score_df <- score_df|>
 view(score_df)
 view(score_df |>
        summarise(
-         in_tune_2_min = min(in_tune_2, na.rm = TRUE),
-         in_tune_2_max = max(in_tune_2, na.rm = TRUE),
-         
-         group_2_min = min(group_2, na.rm = TRUE),
-         group_2_max = max(group_2, na.rm = TRUE),
-         
-         common_2_min = min(common_2, na.rm = TRUE),
-         common_2_max = max(common_2, na.rm = TRUE),
-         
-         outgoing_2_min = min(outgoing_2, na.rm = TRUE),
-         outgoing_2_max = max(outgoing_2, na.rm = TRUE),
-         
-         close_people_2_min = min(close_people_2, na.rm = TRUE),
-         close_people_2_max = max(close_people_2, na.rm = TRUE),
-         
          lonely_min = min(lonely_cont, na.rm = TRUE),
          lonely_max = max(lonely_cont, na.rm = TRUE))) 
 
@@ -598,7 +585,10 @@ score_df <- score_df |>
       levels = c(0, 1),
       labels = c("None/Mild", "Mod/High")))
 
+
 # check
+class(score_df$lonely_dichot)
+
 score_df |> 
   summarise(
     lonely_dichot_min = min(lonely_dichot, na.rm = TRUE),
@@ -794,27 +784,65 @@ chisq.test(table(score_df$ilicit_drug, score_df$lonely_dichot))
 # --------------------
 # 7. MODELS (TABLE 2s)
 # --------------------
-
-# --------------------
-# 7a. UNADJUSTED
-# --------------------
-
-# exposure:   lonely_dich, lonely_cont
-# outcome:    tobacco_dich, males_dich, females_dich, drugs_dich, meds_dich
+# exposure: lonely_dichot, lonely_cont
+# PAST 3 MONTHS outcomes: alcohol2, marijuana, ilicit_drug
+# PAST 12 MONTHS outcome: tobacco_dich, males_dich, females_dich, drugs_dich, meds_dich
 # covariates: patient_age (cont), age_cat, patient_gender, new_race
 
-model_tobacco_unadj <- glm(
-  tobacco_dich ~ lonely_cont,
-  data = score_df,
-  family = binomial
-)
-summary(model_tobacco_unadj)
+# --------------------------
+# 7a. DICHOTOMOUS loneliness
+# --------------------------
+
+# --------------------
+# 7a1. UNADJUSTED
+# --------------------
+
+## Binge Alcohol Use (loneliness = alcohol2 + E)
+
+# model
+m_alc_unadj <- glm(alcohol2 ~ lonely_dichot, data = score_df, family = binomial)
+summary(m_alc_unadj)
                
-# convert to OR
+#95% CI
 exp(cbind(
-  OR = coef(model_tobacco_unadj),
-  confint(model_tobacco_unadj)
+  OR = coef(m_alc_unadj),
+  confint(m_alc_unadj)
+  ))
+
+# tidyverse clean table?
+library(broom)
+tidy(m_alc_unadj, exponentiate = TRUE, conf.int = TRUE) |>
+  filter(term == "lonely_dichotMod/High")
+
+## Cannabis Use (loneliness = marijuana + E)
+
+# model
+m_can_unadj <- glm(marijuana ~ lonely_dichot, data = score_df, family = binomial)
+summary(m_can_unadj)
+
+#95% CI
+exp(cbind(
+  OR = coef(m_can_unadj),
+  confint(m_can_unadj)
+  ))
+
+
+## Ilicit Drug Use (loneliness = ilicit_drug + E)
+
+# model
+m_il_unadj <- glm(ilicit_drug ~ lonely_dichot, data = score_df, family = binomial)
+summary(m_il_unadj)
+
+#95% CI
+exp(cbind(
+  OR = coef(m_il_unadj),
+  confint(m_il_unadj)
 ))
+
+
+
+
+
 
 # ------------
 # 7b. ADJUSTED
