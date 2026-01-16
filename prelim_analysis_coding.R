@@ -5,7 +5,7 @@
 ## Prelim Analysis Plan:
 ## 1. LOAD LIBRARIES AND IMPORT RAW DATA
 ## 2. APPLY INCLUSION/EXCLUSION CRITERIA
-## 3. EXPLORATORY ANALYSES - AGE
+## 3. EXPLORATORY ANALYSES
 ## 4. CLEANING/RECODING
 ## 5. LONELINESS SCORING
 ## 6. DESCRIPTIVES (TABLE 1S)
@@ -375,23 +375,23 @@ table(clean_df$new_race, useNA = "ifany")
 table(clean_df$new_race_f, useNA = "ifany")
 write_csv(clean_df, "outputs/clean_df_1.13.26.csv")
 
-
 ## 13 NAs - discuss with Zach
+## discussed on 1/15/26 - leave as is. that's to be expected for now
 
 
-# -----------------------------
-# 4d. NEW ILICIT DRUGS VARIABLE
-# -----------------------------
+# ------------------------------
+# 4d. NEW ILLICIT DRUGS VARIABLE
+# ------------------------------
 
 clean_df <- clean_df |> 
   mutate(
-    ilicit_drug = as.integer(
+    illicit = as.integer(
       rowSums(across(c(
         cocaine, heroin, opioid, 
         med_anxiety, adhd, illegal_drug))) > 0))
 
 # check
-table(clean_df$ilicit_drug)
+table(clean_df$illicit)
 write_csv(clean_df, "outputs/clean_df_1.15.26.csv")
 
 
@@ -413,40 +413,50 @@ view(clean_df)
 str(clean_df$tobacco)
 unique(clean_df$tobacco)
 table(clean_df$tobacco, useNA = "ifany")
+table(clean_df$meds, useNA = "ifany")
 
 clean_df <- clean_df |> 
   mutate(
-    tobacco_dich = case_when(tobacco %in% 1:4 ~ 1,
+    tobacco_dichot = case_when(tobacco %in% 1:4 ~ 1,
                              tobacco == 5     ~ 0,
                              TRUE             ~ NA_real_),
     
-    males_dich = case_when(males %in% 1:4 ~ 1,
+    males_dichot = case_when(males %in% 1:4 ~ 1,
                            males == 5     ~ 0,
                              TRUE         ~ NA_real_),
     
-    females_dich = case_when(females %in% 1:4 ~ 1,
+    females_dichot = case_when(females %in% 1:4 ~ 1,
                              females == 5     ~ 0,
                              TRUE             ~ NA_real_),
     
-    drugs_dich = case_when(drugs %in% 1:4 ~ 1,
+    drugs_dichot = case_when(drugs %in% 1:4 ~ 1,
                            drugs == 5     ~ 0,
                              TRUE         ~ NA_real_),
     
-    meds_dich = case_when(meds %in% 1:4 ~ 1,
+    meds_dichot = case_when(meds %in% 1:4 ~ 1,
                           meds == 5     ~ 0,
                              TRUE       ~ NA_real_))
 
-# check
-table(clean_df$tobacco, clean_df$tobacco_dich, useNA = "ifany")
-table(clean_df$males, clean_df$males_dich, useNA = "ifany")
-table(clean_df$females, clean_df$females_dich, useNA = "ifany")
-table(clean_df$drugs, clean_df$drugs_dich, useNA = "ifany")
-table(clean_df$meds, clean_df$meds_dich, useNA = "ifany")
+# add a section to combine males_dichot and females_dichot, or do it earlier:
+# LOGIC: if either males/females answer 1:4, then binge = 1; 
+#        if either males/females answer 5,   then binge = 0
 
-## ^ why meds 1 NA??? check more closely
+
+
+
+
+
+
+
+# check
+table(clean_df$tobacco, clean_df$tobacco_dichot, useNA = "ifany")
+table(clean_df$males, clean_df$males_dichot, useNA = "ifany")
+table(clean_df$females, clean_df$females_dichot, useNA = "ifany")
+table(clean_df$drugs, clean_df$drugs_dichot, useNA = "ifany")
+table(clean_df$meds, clean_df$meds_dichot, useNA = "ifany") # NA meds is ok, that happens...
 
 view(clean_df)
-
+write_csv(clean_df, "outputs/clean_df_1.15.26A.csv")
 
 
 
@@ -654,7 +664,9 @@ lapply(
 # --------------------------------------------------------
 # 6b. TABLE 1 - Sample characteristics of ED patients (N=X) 
 # --------------------------------------------------------
-
+# --------------------------------------
+# 6b1. TABLE 1 - dichotomous loneliness
+# --------------------------------------
 # totals
 n_total <- nrow(score_df)
 n_none_mild <- sum(score_df$lonely_dichot == "None/Mild", na.rm = TRUE)
@@ -765,17 +777,32 @@ prop.table(tab_can, margin = 2)*100
 chisq.test(table(score_df$marijuana, score_df$lonely_dichot))
 
 
-## Ilicit 'ilicit_drug'
+## Illicit 'illicit'
 # total
-total_ilicit <- table(score_df$ilicit_drug)
-prop.table(total_ilicit)*100
+total_illicit <- table(score_df$illicit)
+total_illicit
+prop.table(total_illicit)*100
 
 # stratified
-tab_ilicit <- table(score_df$ilicit_drug, score_df$lonely_dichot)
-prop.table(tab_ilicit, margin = 2)*100
+tab_illicit <- table(score_df$illicit, score_df$lonely_dichot)
+tab_illicit
+prop.table(tab_illicit, margin = 2)*100
 
 # chi-sq
-chisq.test(table(score_df$ilicit_drug, score_df$lonely_dichot))
+chisq.test(table(score_df$illicit, score_df$lonely_dichot))
+
+
+# --------------------------------------
+# 6b2. TABLE 1 - continuous loneliness
+# --------------------------------------
+
+
+
+
+
+
+
+
 
 
 
@@ -789,76 +816,149 @@ chisq.test(table(score_df$ilicit_drug, score_df$lonely_dichot))
 # PAST 12 MONTHS outcome: tobacco_dich, males_dich, females_dich, drugs_dich, meds_dich
 # covariates: patient_age (cont), age_cat, patient_gender, new_race
 
-# --------------------------
-# 7a. DICHOTOMOUS loneliness
-# --------------------------
-
+# ------------------------------------------
+# 7a. DICHOTOMOUS loneliness 'lonely_dichot'
+# ------------------------------------------
 # --------------------
 # 7a1. UNADJUSTED
 # --------------------
 
 ## Binge Alcohol Use (loneliness = alcohol2 + E)
-
-# model
+#  model
 m_alc_unadj <- glm(alcohol2 ~ lonely_dichot, data = score_df, family = binomial)
 summary(m_alc_unadj)
                
 #95% CI
 exp(cbind(
   OR = coef(m_alc_unadj),
-  confint(m_alc_unadj)
-  ))
+  confint(m_alc_unadj)))
 
-# tidyverse clean table?
+# tidyverse clean table? use later....
 library(broom)
 tidy(m_alc_unadj, exponentiate = TRUE, conf.int = TRUE) |>
   filter(term == "lonely_dichotMod/High")
 
 ## Cannabis Use (loneliness = marijuana + E)
-
-# model
+#  model
 m_can_unadj <- glm(marijuana ~ lonely_dichot, data = score_df, family = binomial)
 summary(m_can_unadj)
 
 #95% CI
 exp(cbind(
   OR = coef(m_can_unadj),
-  confint(m_can_unadj)
-  ))
+  confint(m_can_unadj)))
 
 
-## Ilicit Drug Use (loneliness = ilicit_drug + E)
-
-# model
-m_il_unadj <- glm(ilicit_drug ~ lonely_dichot, data = score_df, family = binomial)
+## Illicit Drug Use (loneliness = illicit + E)
+#  model
+m_il_unadj <- glm(illicit ~ lonely_dichot, data = score_df, family = binomial)
 summary(m_il_unadj)
 
 #95% CI
 exp(cbind(
   OR = coef(m_il_unadj),
-  confint(m_il_unadj)
-))
+  confint(m_il_unadj)))
+
+
+## Tobacco Use (loneliness = cigarette + E)
+#  model
+m_tob_unadj <- glm(cigarette ~ lonely_dichot, data = score_df, family = binomial)
+summary(m_tob_unadj)
+
+#95% CI
+exp(cbind(
+  OR = coef(m_tob_unadj),
+  confint(m_tob_unadj)))
 
 
 
 
+# -----------------------------------
+# 7a2. ADJUSTED - BUILD MODEL
+# -----------------------------------
 
-
-# ------------
-# 7b. ADJUSTED
-# ------------
-
-model_tobacco_adj <- glm(
-  tobacco_dich ~ lonely_cont + age + sex + new_race,
+# DEMOS FIRST
+model_tobacco_adj <- glm(tobacco_dich ~ lonely_dichot + age + sex + new_race,
   data = clean_df,
   family = binomial)
 
+# COVARIATES: 
+# 1. BINGE ALCOHOL USE
+# significance:
+# continue on yes/no, rationale:
+
+# 2. CANNABIS USE
+# significance:
+# continue on yes/no, rationale:
+
+# 3. TOBACCO USE
+# significance:
+# continue on yes/no, rationale:
+
+# 3. ILLICIT DRUG USE
+# significance:
+# continue on yes/no, rationale:
+
+
+
+
+# ---------------------------------------
+# 7b. CONTINUOUS loneliness 'lonely_cont'
+# ---------------------------------------
+# --------------------
+# 7b1. UNADJUSTED
+# --------------------
+
+## Binge Alcohol Use (loneliness = alcohol2 + E)
+#  model
+m_alc_unadj_cont <- glm(alcohol2 ~ lonely_cont, data = score_df, family = binomial)
+summary(m_alc_unadj_cont)
+
+#95% CI
+exp(cbind(
+  OR = coef(m_alc_unadj_cont),
+  confint(m_alc_unadj_cont)))
+
+
+## Cannabis Use (loneliness = marijuana + E)
+#  model
+m_can_unadj_cont <- glm(marijuana ~ lonely_cont, data = score_df, family = binomial)
+summary(m_can_unadj_cont)
+
+#95% CI
+exp(cbind(
+  OR = coef(m_can_unadj_cont),
+  confint(m_can_unadj_cont)))
+
+
+## Illicit Drug Use (loneliness = illicit + E)
+#  model
+m_il_unadj_cont <- glm(illicit ~ lonely_cont, data = score_df, family = binomial)
+summary(m_il_unadj_cont)
+
+#95% CI
+exp(cbind(
+  OR = coef(m_il_unadj_cont),
+  confint(m_il_unadj_cont)))
+
+
+## Tobacco Use (loneliness = cigarette + E)
+#  model
+m_tob_unadj_cont <- glm(cigarette ~ lonely_cont, data = score_df, family = binomial)
+summary(m_tob_unadj_cont)
+
+#95% CI
+exp(cbind(
+  OR = coef(m_tob_unadj_cont),
+  confint(m_tob_unadj_cont)))
 
 
 
 
 
-
+# ----------------
+# 7b2. ADJUSTED
+# ----------------
 
 
 
