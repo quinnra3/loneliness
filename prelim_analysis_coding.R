@@ -343,7 +343,6 @@ clean_df <- clean_df |>
       TRUE ~ NA_real_))
 
 view(clean_df)
-# write_csv(clean_df, "outputs/clean_df_1.8.26.csv")
 table(clean_df$phq_score, clean_df$phq_dichot, useNA = "ifany")
 table(clean_df$gad_score, clean_df$gad_dichot, useNA = "ifany")
 
@@ -360,7 +359,6 @@ clean_df <- clean_df |>
       patient_ethnicity == 2 & patient_race == 2 ~ 3, # Black/African American, Non-Hispanic
       patient_ethnicity == 2 & patient_race %in% c(3,4) ~ 4, # Asian or AI/AN
       TRUE ~ NA_real_),
-    
     new_race_f = factor(
       new_race,
       levels = c(1,2,3,4),
@@ -373,7 +371,6 @@ clean_df <- clean_df |>
 # check
 table(clean_df$new_race, useNA = "ifany")
 table(clean_df$new_race_f, useNA = "ifany")
-write_csv(clean_df, "outputs/clean_df_1.13.26.csv")
 
 ## 13 NAs - discuss with Zach
 ## discussed on 1/15/26 - leave as is. that's to be expected for now
@@ -392,8 +389,6 @@ clean_df <- clean_df |>
 
 # check
 table(clean_df$illicit)
-write_csv(clean_df, "outputs/clean_df_1.15.26.csv")
-
 
 # -----------------------
 # 4e. NAs for 'alcohol_2'
@@ -418,47 +413,45 @@ table(clean_df$meds, useNA = "ifany")
 clean_df <- clean_df |> 
   mutate(
     tobacco_dichot = case_when(tobacco %in% 1:4 ~ 1,
-                             tobacco == 5     ~ 0,
-                             TRUE             ~ NA_real_),
+                               tobacco == 5     ~ 0,
+                               TRUE             ~ NA_real_),
     
     males_dichot = case_when(males %in% 1:4 ~ 1,
-                           males == 5     ~ 0,
-                             TRUE         ~ NA_real_),
+                             males == 5     ~ 0,
+                             TRUE           ~ NA_real_),
     
     females_dichot = case_when(females %in% 1:4 ~ 1,
-                             females == 5     ~ 0,
-                             TRUE             ~ NA_real_),
+                               females == 5     ~ 0,
+                               TRUE             ~ NA_real_),
     
     drugs_dichot = case_when(drugs %in% 1:4 ~ 1,
-                           drugs == 5     ~ 0,
-                             TRUE         ~ NA_real_),
+                             drugs == 5     ~ 0,
+                             TRUE           ~ NA_real_),
     
     meds_dichot = case_when(meds %in% 1:4 ~ 1,
-                          meds == 5     ~ 0,
-                             TRUE       ~ NA_real_))
+                            meds == 5     ~ 0,
+                            TRUE          ~ NA_real_))
 
-# add a section to combine males_dichot and females_dichot, or do it earlier:
-# LOGIC: if either males/females answer 1:4, then binge = 1; 
-#        if either males/females answer 5,   then binge = 0
+# -------------------------------
+# 4g. 12-MONTH BINGE ALC VARIABLE
+# -------------------------------
 
+clean_df <- clean_df |> 
+  mutate(
+    binge_12mo_raw = coalesce(males, females), 
+    
+    binge_12mo = case_when(
+      binge_12mo_raw %in% 1:4 ~ 1,
+      binge_12mo_raw == 5     ~ 0,
+      TRUE                    ~ NA_real_))
 
-
-
-
-
-
-
-# check
+# check all 12 month outcomes
 table(clean_df$tobacco, clean_df$tobacco_dichot, useNA = "ifany")
-table(clean_df$males, clean_df$males_dichot, useNA = "ifany")
-table(clean_df$females, clean_df$females_dichot, useNA = "ifany")
 table(clean_df$drugs, clean_df$drugs_dichot, useNA = "ifany")
 table(clean_df$meds, clean_df$meds_dichot, useNA = "ifany") # NA meds is ok, that happens...
-
-view(clean_df)
-write_csv(clean_df, "outputs/clean_df_1.15.26A.csv")
-
-
+table(clean_df$males, clean_df$males_dichot, useNA = "ifany")
+table(clean_df$females, clean_df$females_dichot, useNA = "ifany")
+table(clean_df$binge_12mo_raw, clean_df$binge_12mo, useNA = "ifany")
 
 # ---------------------
 # 5. LONELINESS SCORING
@@ -485,8 +478,7 @@ clean_df <- clean_df |>
         in_tune, companion, turn_to, alone, group,
              outgoing, common, close, interest_ideas, close_people,
              left_out, relationship, knows_you, isolated, understand,
-             shy, around_you, talk_to, turn
-        ), na.rm = TRUE)),
+             shy, around_you, talk_to, turn), na.rm = TRUE)),
       companionship),
     
     left_out = if_else(
@@ -495,10 +487,8 @@ clean_df <- clean_df |>
         in_tune, companion, turn_to, alone, group,
                outgoing, common, close, interest_ideas, close_people,
                relationship, knows_you, isolated, companionship, understand,
-               shy, around_you, talk_to, turn
-        ), na.rm = TRUE)),
-      left_out)
-    ) |> 
+               shy, around_you, talk_to, turn), na.rm = TRUE)),
+      left_out)) |> 
   ungroup()
 
 # check
