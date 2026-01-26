@@ -33,7 +33,7 @@ raw_data = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2026-01-07_
 skimr::skim(raw_data)
 names(raw_data)
 raw_data
-view(raw_data) # <- use to view file from RStudio
+view(raw_data)
 
 # ---------------------------------------------
 # 2. APPLY INCLUSION/EXCLUSION CRITERIA
@@ -353,7 +353,7 @@ clean_df <- clean_df |>
       patient_ethnicity == 2 & patient_race == 1 ~ 2, # White, Non-Hispanic
       patient_ethnicity == 2 & patient_race == 2 ~ 3, # Black/African American, Non-Hispanic
       patient_ethnicity == 2 & patient_race %in% c(3,4) ~ 4, # Asian or AI/AN
-      TRUE ~ NA_real_),
+      TRUE ~ NA_integer_),
     new_race_f = factor(
       new_race,
       levels = c(1,2,3,4),
@@ -382,7 +382,7 @@ clean_df <- clean_df |>
         med_anxiety, adhd, illegal_drug))) > 0))
 
 # check
-table(clean_df$illicit)
+table(clean_df$illicit) # should be 34
 
 # -----------------------
 # 4e. NAs for 'alcohol_2'
@@ -916,7 +916,18 @@ or_ci <- function(model) {
 m_alc_3m_dich_b0 <- glm(alcohol2 ~ lonely_dichot, data = score_df, family = binomial)
 summary(m_alc_3m_dich_b0)
 or_ci(m_alc_3m_dich_b0)
-               
+
+broom::tidy(
+  m_alc_3m_dich_b0,
+  exponentiate = TRUE,
+  conf.int = TRUE) |> 
+  filter(grepl("^lonely_dichot", term)) |> 
+  mutate(
+    OR = round(estimate, 2),
+    CI = paste0("(", round(conf.low, 2), ",", round(conf.high, 2), ")"),
+    p = signif(p.value, 3)) |> 
+  select(OR, CI, p)
+  
 # b1: 
 m_alc_3m_dich_b1 <- glm(alcohol2 ~ lonely_dichot + age_cat + gender + new_race,
                         data = score_df,
@@ -937,6 +948,15 @@ m_alc_3m_dich_b3 <- glm(alcohol2 ~ lonely_dichot + age_cat + gender + new_race +
                         family = binomial)
 summary(m_alc_3m_dich_b3)
 or_ci(m_alc_3m_dich_b3)
+
+results_alc_3m_dich <- bind_rows(
+  b0 = tidy(m_alc_3m_dich_b0, exponentiate = TRUE, conf.int = TRUE),
+  b1 = tidy(m_alc_3m_dich_b1, exponentiate = TRUE, conf.int = TRUE),
+  b2 = tidy(m_alc_3m_dich_b2, exponentiate = TRUE, conf.int = TRUE),
+  b3 = tidy(m_alc_3m_dich_b3, exponentiate = TRUE, conf.int = TRUE),
+  .id = "model") |>
+  filter(grepl("^lonely_dichot", term))
+view(results_alc_3m_dich)
 
 # ------------------------------------------------
 # 7a. Binge Alcohol Use — 3mo — Loneliness (cont)
@@ -1344,4 +1364,54 @@ summary(m_tob_12mo_cont_b2)
 or_ci(m_tob_12mo_cont_b2)
 
 # b3: N/A
+
+# =================================================
+# 9. STRATIFIED ANALYSIS BY ANXIETY AND DEPRESSION
+# =================================================
+
+#------------------------------
+# Stratify by:
+#     if either 'gad_dichot' = 1 OR 'phq_dichot' = 1 (moderate/severe anxiety OR moderate/severe depression symptoms),
+#     then 'mh_strata' = 1. 
+#
+#     else, if 'gad_dichot' = 0 AND 'phq_dichot' = 0 (mild/none anxiety AND mild/none depression symptoms),
+#     then 'mh_strata' = 1.
+#------------------------------
+
+mh_df <- score_df |> 
+  mutate(
+    mh_strata = case_when(
+      gad_dichot == 1 | phq_dichot == 1 ~ 1,
+      gad_dichot == 0 & phq_dichot == 0 ~ 0,
+      TRUE ~ NA_real_),
+    
+    mh_strata = factor(
+      mh_strata,
+      levels = c(0,1),
+      labels = c("None/Mild MH symptoms", "Moderate/Severe MH symptoms")
+      )
+    )
+
+# check
+table(mh_df$mh_strata, useNA = "ifany")
+prop.table(table(mh_df$mh_strata))
+
+## results:
+## mh_strata = 1 (mod/severe) N=103
+## mh_strata = 0 (mild/none)  N=193
+
+# descriptives
+
+tbl_mh_demo <- mh_df |> 
+  filter(!is.na(mh_strata)) |> 
+  tbl_summary(
+    by = mh_strata,
+    include = c(age_cat, gender, new_race),
+    statistic = list(
+      all_categorical() ~ "{n} ({p}%)"),
+    missing = "no")
+
+
+
+
 
