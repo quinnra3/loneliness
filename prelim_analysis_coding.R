@@ -1,5 +1,8 @@
 ############################
 ## Prelim Analyses - Coding
+## 12.6.25 - 1.22.26
+## Quinn Anderson
+## RC, CUIMC ED
 ############################
 
 ## Prelim Analysis Plan:
@@ -9,8 +12,8 @@
 ## 4. CLEANING/RECODING
 ## 5. LONELINESS SCORING
 ## 6. DESCRIPTIVES (TABLE 1S)
-## 7. MODELS (TABLE 2S)
-
+## 7. MODELS - 3m OUTCOMES (TABLE 2)
+## 8. MODELS - 12M OUTCOMES (TABLE 2)
 
 # -------------------------------------
 # 1. LOAD LIBRARIES AND IMPORT RAW DATA
@@ -18,6 +21,7 @@
 
 # load libraries
 library(tidyverse)
+library(broom)
 
 # find directory location
 getwd()
@@ -30,7 +34,6 @@ skimr::skim(raw_data)
 names(raw_data)
 raw_data
 view(raw_data) # <- use to view file from RStudio
-
 
 # ---------------------------------------------
 # 2. APPLY INCLUSION/EXCLUSION CRITERIA
@@ -49,8 +52,6 @@ clean_df <- raw_data |>
 # check
 view(clean_df)  
 nrow(raw_data) - nrow(clean_df) # should be 9
-
-
 
 # -----------------------------
 # 3. EXPLORATORY ANALYSES - AGE
@@ -92,7 +93,6 @@ clean_df_check <- clean_df |>
   filter(patient_age < 18 | patient_age > 75)
 view(clean_df_check) # should be 0/none
 
-  
 # Age by category
 clean_df <- clean_df |> 
   mutate(
@@ -113,7 +113,6 @@ clean_df |>
   arrange(patient_age)
 
 table(clean_df$age_cat, useNA = "ifany")
-
 
 # Age continuous Histogram
 ggplot(clean_df, aes(x = patient_age)) +
@@ -141,7 +140,6 @@ clean_df |>
     IQR_age = IQR(patient_age),
     min_age = min(patient_age),
     max_age = max(patient_age))
-
 
 # --------------------
 # 4. CLEANING/RECODING
@@ -221,17 +219,16 @@ view(clean_df)
 clean_df |> count(patient_gender, sort = TRUE)
 str(clean_df$patient_gender)
 
-
 # recode dichot variables from 1(yes) 2(no) -> 1(yes) 0(no)
 clean_df <- clean_df |> 
   mutate(
     gender = case_when(
-      patient_gender == 1 ~ 0, # female '0' reference
+      patient_gender == 1 ~ 0, # female '0' ref
       patient_gender == 2 ~ 1, # male   '1'
       TRUE                ~ NA), 
     cigarette = case_when(
-      cigarette_1 == 1 ~ 1,
-      cigarette_1 == 2 ~ 0,
+      cigarette_1 == 1 ~ 1,    # yes '1'
+      cigarette_1 == 2 ~ 0,    # no  '0' ref
       TRUE             ~ NA),
     alcohol = case_when(
       alcohol_1 == 1 ~ 1,
@@ -311,7 +308,6 @@ clean_df |>
     illegal_drug_min = min(illegal_drug, na.rm = TRUE),
     illegal_drug_max = max(illegal_drug, na.rm = TRUE))
 
-
 # -------------------------
 # 4b. PHQ/GAD SCORE DICHOTS
 # -------------------------
@@ -346,7 +342,6 @@ view(clean_df)
 table(clean_df$phq_score, clean_df$phq_dichot, useNA = "ifany")
 table(clean_df$gad_score, clean_df$gad_dichot, useNA = "ifany")
 
-
 # ---------------------
 # 4c. NEW RACE VARIABLE
 # ---------------------
@@ -375,7 +370,6 @@ table(clean_df$new_race_f, useNA = "ifany")
 ## 13 NAs - discuss with Zach
 ## discussed on 1/15/26 - leave as is. that's to be expected for now
 
-
 # ------------------------------
 # 4d. NEW ILLICIT DRUGS VARIABLE
 # ------------------------------
@@ -399,7 +393,6 @@ clean_df <- clean_df |>
 
 # check
 view(clean_df)
-
 
 # ---------------------------------
 # 4f. 12-MONTH SUBSTANCE USE DICHOT
@@ -536,7 +529,6 @@ view(score_df |>
          close_people_2_min = min(close_people_2, na.rm = TRUE),
          close_people_2_max = max(close_people_2, na.rm = TRUE)))
 
-
 # -----------------------------------------------------------------------------
 # 5c. CALCULATE TOTAL LONELY SCORES (continuous lonely variable, 'lonely_cont')
 # -----------------------------------------------------------------------------
@@ -549,7 +541,6 @@ score_df <- score_df|>
       understand_2 + shy + around_you + talk_to_2 + turn_2))
 
 # check
-view(score_df)
 view(score_df |>
        summarise(
          lonely_min = min(lonely_cont, na.rm = TRUE),
@@ -588,14 +579,6 @@ score_df <- score_df |>
 
 # check
 class(score_df$lonely_dichot)
-
-score_df |> 
-  summarise(
-    lonely_dichot_min = min(lonely_dichot, na.rm = TRUE),
-    lonely_dichot_max = max(lonely_dichot, na.rm = TRUE))
-
-view(score_df)
-
 table(score_df$lonely_cont, score_df$lonely_dichot, useNA = "ifany")
 
 # -----------------------------
@@ -618,23 +601,18 @@ sum(is.na(score_df$lonely_cont)) # should be 0
 # Loneliness Average for entire sample
 mean_tbl <- score_df |> 
   summarise(
-    N = n(), # 296
+    N = n(), # n=296
     mean_total = mean(lonely_cont, na.rm = TRUE),
     sd_total = sd(lonely_cont, na.rm = TRUE)) |> 
   mutate(
     lonely_cont = sprintf("%0.2f (%0.2f)", mean_total, sd_total))
-   # select(N, lonely_cont))
 
-str(score_df$lonely_cont)
 view(mean_tbl)
 
-# --------------------------
-# 6. DESCRIPTIVES (TABLE 1s)
-# --------------------------
-
-# ----------------
+# ==============================
 # 6a. DESCRIPTIVES
-# ----------------
+# ==============================
+
 # exposure distributions
 table(score_df$lonely_cont, useNA = "ifany")
 prop.table(table(score_df$lonely_cont))
@@ -645,18 +623,17 @@ lapply(
   clean_df[c("tobacco_dich", "males_dich", "females_dich", "drugs_dich", "meds_dich")],
   table,
   useNA = "ifany")
-### ^ why meds_dich has 1 NA??
 
 
 # unadjusted cross-tabs
 
 
-# --------------------------------------------------------
+# ==========================================================
 # 6b. TABLE 1 - Sample characteristics of ED patients (N=X) 
-# --------------------------------------------------------
-# --------------------------------------
+
 # 6b1. TABLE 1 - dichotomous loneliness
-# --------------------------------------
+# ==========================================================
+
 # totals
 n_total <- nrow(score_df)
 n_none_mild <- sum(score_df$lonely_dichot == "None/Mild", na.rm = TRUE)
@@ -786,6 +763,115 @@ chisq.test(table(score_df$illicit, score_df$lonely_dichot))
 # 6b2. TABLE 1 - continuous loneliness
 # --------------------------------------
 
+# totals
+n_total <- nrow(score_df)
+n_none_mild <- sum(score_df$lonely_dichot == "None/Mild", na.rm = TRUE)
+n_mod_high  <- sum(score_df$lonely_dichot == "Mod/High", na.rm = TRUE)
+
+## Sex 'gender'
+# total
+total_gender <- table(score_df$gender)
+prop.table(total_gender)*100
+
+# stratified
+tab_gender <- table(score_df$gender, score_df$lonely_dichot)
+prop.table(tab_gender, margin = 2)*100
+
+
+
+
+## Age 'age_cat'
+# total
+total_age <- table(score_df$age_cat)
+prop.table(total_age)*100
+
+# stratified
+tab_age   <- table(score_df$age_cat, score_df$lonely_dichot)
+prop.table(tab_age, margin = 2)*100
+
+
+
+
+## Race/Ethnicity 'new_race'
+# total
+total_race <- table(score_df$new_race)
+prop.table(total_race)*100
+
+# stratified
+tab_race <- table(score_df$new_race, score_df$lonely_dichot)
+prop.table(tab_race, margin = 2)*100
+
+
+
+
+## Anxiety 'gad_dichot'
+# total
+total_anxiety <- table(score_df$gad_dichot)
+prop.table(total_anxiety)*100
+
+# stratified
+tab_anxiety <- table(score_df$gad_dichot, score_df$lonely_dichot)
+prop.table(tab_anxiety, margin = 2)*100
+
+
+
+
+## Depression 'phq_dichot'
+# total
+total_dep <- table(score_df$phq_dichot)
+prop.table(total_dep)*100
+
+# stratified
+tab_dep <- table(score_df$phq_dichot, score_df$lonely_dichot)
+prop.table(tab_dep, margin = 2)*100
+
+
+
+## Cigarette Use 'cigarette'
+# total
+total_cig <- table(score_df$cigarette)
+prop.table(total_cig)*100
+
+# stratified
+tab_cig <- table(score_df$cigarette, score_df$lonely_dichot)
+prop.table(tab_cig, margin = 2)*100
+
+
+
+
+## Binge Drink 'alcohol2'
+# total
+total_alc <- table(score_df$alcohol2)
+prop.table(total_alc)*100
+
+# stratified
+tab_alc <- table(score_df$alcohol2, score_df$lonely_dichot)
+prop.table(tab_alc, margin = 2)*100
+
+
+
+
+## Cannabis 'marijuana'
+# total
+total_cannabis <- table(score_df$marijuana)
+prop.table(total_cannabis)*100
+
+# stratified
+tab_can <- table(score_df$marijuana, score_df$lonely_dichot)
+prop.table(tab_can, margin = 2)*100
+
+
+
+## Illicit 'illicit'
+# total
+total_illicit <- table(score_df$illicit)
+total_illicit
+prop.table(total_illicit)*100
+
+# stratified
+tab_illicit <- table(score_df$illicit, score_df$lonely_dichot)
+tab_illicit
+prop.table(tab_illicit, margin = 2)*100
 
 
 
@@ -795,160 +881,467 @@ chisq.test(table(score_df$illicit, score_df$lonely_dichot))
 
 
 
+# ================================================
+# 7. LOGISTIC REGRESSION MODELS — 3-MONTH OUTCOMES
+# ================================================
 
+# Outcomes:
+#   a) Binge alcohol use    'alcohol2'
+#   b) Cannabis use         'marijuana'
+#   c) Illicit drug use     'illicit'
+#   d) Tobacco use          'cigarette'
+#
+# For each outcome:
+#   - Loneliness modeled as dichotomous and continuous
+#   - Models estimated hierarchically:
+#       b0 = crude (unadjusted)
+#       b1 = + demographics
+#       b2 = + anxiety and depression
+#       b3 = + tobacco use (except when cigarette is the outcome)
 
+# OR (95% CI) function:
+or_ci <- function(model) {
+  out <- exp(cbind(
+    OR = coef(model),
+    confint(model)
+  ))
+  return(out)
+}
 
-# --------------------
-# 7. MODELS (TABLE 2s)
-# --------------------
-# exposure: lonely_dichot, lonely_cont
-# PAST 3 MONTHS outcomes: alcohol2, marijuana, ilicit_drug
-# PAST 12 MONTHS outcome: tobacco_dich, males_dich, females_dich, drugs_dich, meds_dich
-# covariates: patient_age (cont), age_cat, patient_gender, new_race
+# ------------------------------------------------
+# 7a. Binge Alcohol Use - 3mo - Loneliness (dich)
+# ------------------------------------------------
 
-# ------------------------------------------
-# 7a. DICHOTOMOUS loneliness 'lonely_dichot'
-# ------------------------------------------
-# --------------------
-# 7a1. UNADJUSTED
-# --------------------
-
-## Binge Alcohol Use (loneliness = alcohol2 + E)
-#  model
-m_alc_unadj <- glm(alcohol2 ~ lonely_dichot, data = score_df, family = binomial)
-summary(m_alc_unadj)
+# b0: crude
+m_alc_3m_dich_b0 <- glm(alcohol2 ~ lonely_dichot, data = score_df, family = binomial)
+summary(m_alc_3m_dich_b0)
+or_ci(m_alc_3m_dich_b0)
                
-#95% CI
-exp(cbind(
-  OR = coef(m_alc_unadj),
-  confint(m_alc_unadj)))
+# b1: 
+m_alc_3m_dich_b1 <- glm(alcohol2 ~ lonely_dichot + age_cat + gender + new_race,
+                        data = score_df,
+                        family = binomial)
+summary(m_alc_3m_dich_b1)
+or_ci(m_alc_3m_dich_b1)
 
-# tidyverse clean table? use later....
-library(broom)
-tidy(m_alc_unadj, exponentiate = TRUE, conf.int = TRUE) |>
-  filter(term == "lonely_dichotMod/High")
+# b2: 
+m_alc_3m_dich_b2 <- glm(alcohol2 ~ lonely_dichot + age_cat + gender + new_race + gad_dichot + phq_dichot,
+                        data = score_df,
+                        family = binomial)
+summary(m_alc_3m_dich_b2)
+or_ci(m_alc_3m_dich_b2)
 
-## Cannabis Use (loneliness = marijuana + E)
-#  model
-m_can_unadj <- glm(marijuana ~ lonely_dichot, data = score_df, family = binomial)
-summary(m_can_unadj)
+# b3: 
+m_alc_3m_dich_b3 <- glm(alcohol2 ~ lonely_dichot + age_cat + gender + new_race + gad_dichot + phq_dichot + cigarette,
+                        data = score_df,
+                        family = binomial)
+summary(m_alc_3m_dich_b3)
+or_ci(m_alc_3m_dich_b3)
 
-#95% CI
-exp(cbind(
-  OR = coef(m_can_unadj),
-  confint(m_can_unadj)))
+# ------------------------------------------------
+# 7a. Binge Alcohol Use — 3mo — Loneliness (cont)
+# ------------------------------------------------
 
+# b0: crude
+m_alc_3m_cont_b0 <- glm(alcohol2 ~ lonely_cont, data = score_df, family = binomial)
+summary(m_alc_3m_cont_b0)
+or_ci(m_alc_3m_cont_b0)
 
-## Illicit Drug Use (loneliness = illicit + E)
-#  model
-m_il_unadj <- glm(illicit ~ lonely_dichot, data = score_df, family = binomial)
-summary(m_il_unadj)
+# b1:
+m_alc_3m_cont_b1 <- glm(alcohol2 ~ lonely_cont + age_cat + gender + new_race, 
+                        data = score_df, family = binomial)
+summary(m_alc_3m_cont_b1)
+or_ci(m_alc_3m_cont_b1)
 
-#95% CI
-exp(cbind(
-  OR = coef(m_il_unadj),
-  confint(m_il_unadj)))
+# b2:
+m_alc_3m_cont_b2 <- glm(alcohol2 ~ lonely_cont + age_cat + gender + new_race + phq_dichot + gad_dichot, 
+                        data = score_df, family = binomial)
+summary(m_alc_3m_cont_b2)
+or_ci(m_alc_3m_cont_b2)
 
-
-## Tobacco Use (loneliness = cigarette + E)
-#  model
-m_tob_unadj <- glm(cigarette ~ lonely_dichot, data = score_df, family = binomial)
-summary(m_tob_unadj)
-
-#95% CI
-exp(cbind(
-  OR = coef(m_tob_unadj),
-  confint(m_tob_unadj)))
-
-
-
-
-# -----------------------------------
-# 7a2. ADJUSTED - BUILD MODEL
-# -----------------------------------
-
-# DEMOS FIRST
-model_tobacco_adj <- glm(tobacco_dich ~ lonely_dichot + age + sex + new_race,
-  data = clean_df,
-  family = binomial)
-
-# COVARIATES: 
-# 1. BINGE ALCOHOL USE
-# significance:
-# continue on yes/no, rationale:
-
-# 2. CANNABIS USE
-# significance:
-# continue on yes/no, rationale:
-
-# 3. TOBACCO USE
-# significance:
-# continue on yes/no, rationale:
-
-# 3. ILLICIT DRUG USE
-# significance:
-# continue on yes/no, rationale:
+# b3:
+m_alc_3m_cont_b3 <- glm(alcohol2 ~ lonely_cont + age_cat + gender + new_race + phq_dichot + gad_dichot + cigarette, 
+                        data = score_df, family = binomial)
+summary(m_alc_3m_cont_b3)
+or_ci(m_alc_3m_cont_b3)
 
 
+# --------------------------------------------
+# 7b. Cannabis Use — 3mo — Loneliness (dichot)
+# --------------------------------------------
+
+# b0: crude
+m_can_3m_dich_b0 <- glm(marijuana ~ lonely_dichot, data = score_df, family = binomial)
+summary(m_can_3m_dich_b0)
+or_ci(m_can_3m_dich_b0)
+
+# b1:
+m_can_3m_dich_b1 <- glm(marijuana ~ lonely_dichot + age_cat + gender + new_race,
+                        data = score_df,
+                        family = binomial)
+summary(m_can_3m_dich_b1)
+or_ci(m_can_3m_dich_b1)
+
+# b2:
+m_can_3m_dich_b2 <- glm(marijuana ~ lonely_dichot + age_cat + gender + new_race + gad_dichot + phq_dichot,
+                        data = score_df,
+                        family = binomial)
+summary(m_can_3m_dich_b2)
+or_ci(m_can_3m_dich_b2)
+
+# b3:
+m_can_3m_dich_b3 <- glm(marijuana ~ lonely_dichot + age_cat + gender + new_race + gad_dichot + phq_dichot + cigarette,
+                        data = score_df,
+                        family = binomial)
+summary(m_can_3m_dich_b3)
+or_ci(m_can_3m_dich_b3)
+
+# ------------------------------------------
+# 7b. Cannabis Use — 3mo — Loneliness (cont)
+# ------------------------------------------
+
+# b0: crude
+m_can_3m_cont_b0 <- glm(marijuana ~ lonely_cont, data = score_df, family = binomial)
+summary(m_can_3m_cont_b0)
+or_ci(m_can_3m_cont_b0)
+
+# b1:
+m_can_3m_cont_b1 <- glm(marijuana ~ lonely_cont + age_cat + gender + new_race,
+                        data = score_df, family = binomial)
+summary(m_can_3m_cont_b1)
+or_ci(m_can_3m_cont_b1)
+
+# b2:
+m_can_3m_cont_b2 <- glm(marijuana ~ lonely_cont + age_cat + gender + new_race + gad_dichot + phq_dichot,
+                        data = score_df, family = binomial)
+summary(m_can_3m_cont_b2)
+or_ci(m_can_3m_cont_b2)
+
+# b3:
+m_can_3m_cont_b3 <- glm(marijuana ~ lonely_cont + age_cat + gender + new_race + gad_dichot + phq_dichot + cigarette,
+                        data = score_df, family = binomial)
+summary(m_can_3m_cont_b3)
+or_ci(m_can_3m_cont_b3)
+
+# ------------------------------------------------
+# 7c. Illicit Drug Use — 3mo — Loneliness (dichot)
+# ------------------------------------------------
+
+# b0: crude
+m_il_3m_dich_b0 <- glm(illicit ~ lonely_dichot, data = score_df, family = binomial)
+summary(m_il_3m_dich_b0)
+or_ci(m_il_3m_dich_b0)
+
+# b1:
+m_il_3m_dich_b1 <- glm(illicit ~ lonely_dichot + age_cat + gender + new_race,
+                       data = score_df, family = binomial)
+summary(m_il_3m_dich_b1)
+or_ci(m_il_3m_dich_b1)
+
+# b2:
+m_il_3m_dich_b2 <- glm(illicit ~ lonely_dichot + age_cat + gender + new_race + gad_dichot + phq_dichot,
+                       data = score_df, family = binomial)
+summary(m_il_3m_dich_b2)
+or_ci(m_il_3m_dich_b2)
+
+# b3:
+m_il_3m_dich_b3 <- glm(illicit ~ lonely_dichot + age_cat + gender + new_race + gad_dichot + phq_dichot + cigarette,
+                       data = score_df, family = binomial)
+summary(m_il_3m_dich_b3)
+or_ci(m_il_3m_dich_b3)
+
+# ------------------------------------------------
+# 7c. Illicit Drug Use — 3mo — Loneliness (cont)
+# ------------------------------------------------
+
+# b0: crude
+m_il_3m_cont_b0 <- glm(illicit ~ lonely_cont, data = score_df, family = binomial)
+summary(m_il_3m_cont_b0)
+or_ci(m_il_3m_cont_b0)
+
+# b1:
+m_il_3m_cont_b1 <- glm(illicit ~ lonely_cont + age_cat + gender + new_race, data = score_df, family = binomial)
+summary(m_il_3m_cont_b1)
+or_ci(m_il_3m_cont_b1)
+
+# b2:
+m_il_3m_cont_b2 <- glm(illicit ~ lonely_cont + age_cat + gender + new_race + gad_dichot + phq_dichot,
+                       data = score_df, family = binomial)
+summary(m_il_3m_cont_b2)
+or_ci(m_il_3m_cont_b2)
+
+# b3:
+m_il_3m_cont_b3 <- glm(illicit ~ lonely_cont + age_cat + gender + new_race + gad_dichot + phq_dichot + cigarette,
+                       data = score_df, family = binomial)
+summary(m_il_3m_cont_b3)
+or_ci(m_il_3m_cont_b3)
+
+# ------------------------------------------------
+# 7d. Tobacco Use — 3mo — Loneliness (dichot)
+# ------------------------------------------------
+
+# b0: crude
+m_tob_3m_dich_b0 <- glm(cigarette ~ lonely_dichot, data = score_df, family = binomial)
+summary(m_tob_3m_dich_b0)
+or_ci(m_tob_3m_dich_b0)
+
+# b1:
+m_tob_3m_dich_b1 <- glm(cigarette ~ lonely_dichot + age_cat + gender + new_race,
+                        data = score_df, family = binomial)
+summary(m_tob_3m_dich_b1)
+or_ci(m_tob_3m_dich_b1)
+
+# b2:
+m_tob_3m_dich_b2 <- glm(cigarette ~ lonely_dichot + age_cat + gender + new_race + gad_score + phq_dichot,
+                        data = score_df, family = binomial)
+summary(m_tob_3m_dich_b2)
+or_ci(m_tob_3m_dich_b2)
+
+# b3 omitted for cigarette outcome (not applicable)
+
+# ------------------------------------------------
+# 7d. Tobacco Use — 3mo — Loneliness (dichot)
+# ------------------------------------------------
+
+# b0: crude
+m_tob_3m_cont_b0 <- glm(cigarette ~ lonely_cont, data = score_df, family = binomial)
+summary(m_tob_3m_cont_b0)
+or_ci(m_tob_3m_cont_b0)
+
+# b1
+m_tob_3m_cont_b1 <- glm(cigarette ~ lonely_cont + age_cat + gender + new_race, data = score_df, family = binomial)
+summary(m_tob_3m_cont_b1)
+or_ci(m_tob_3m_cont_b1)
+
+# b2
+m_tob_3m_cont_b2 <- glm(cigarette ~ lonely_cont + age_cat + gender + new_race + gad_dichot + phq_dichot,
+                        data = score_df, family = binomial)
+summary(m_tob_3m_cont_b2)
+or_ci(m_tob_3m_cont_b2)
+
+# b3 N/A
+
+# =================================================
+# 8. LOGISTIC REGRESSION MODELS — 12-MONTH OUTCOMES
+# =================================================
+
+# Outcomes:
+#   a) Binge alcohol use     'binge_12mo'
+#   b) Illicit drug use      'drugs_dichot'
+#   c) Prescription med use  'meds_dichot'
+#   d) Tobacco use           'tobacco_dichot'
+#
+# For each outcome:
+#   - Loneliness modeled as dichotomous and continuous
+#   - Models estimated hierarchically:
+#       b0 = crude (unadjusted)
+#       b1 = + demographics
+#       b2 = + anxiety and depression
+#       b3 = + tobacco use (except when cigarette is the outcome)
+
+# ------------------------------------------------
+# 8a. Binge Alcohol Use - 12mo - Loneliness (dich)
+# ------------------------------------------------
+
+# b0: crude
+m_alc_12m_dich_b0 <- glm(binge_12mo ~ lonely_dichot, data = score_df, family = binomial)
+summary(m_alc_12m_dich_b0)
+or_ci(m_alc_12m_dich_b0)
+
+# b1:
+m_alc_12m_dich_b1 <- glm(binge_12mo ~ lonely_dichot + age_cat + gender + new_race,
+                         data = score_df, family = binomial)
+summary(m_alc_12m_dich_b1)
+or_ci(m_alc_12m_dich_b1)
+
+# b2:
+m_alc_12m_dich_b2 <- glm(binge_12mo ~ lonely_dichot + age_cat + gender + new_race + gad_dichot + phq_dichot,
+                         data = score_df, family = binomial)
+summary(m_alc_12m_dich_b2)
+or_ci(m_alc_12m_dich_b2)
+
+# b3:
+m_alc_12m_dich_b3 <- glm(binge_12mo ~ lonely_dichot + age_cat + gender + new_race + gad_dichot + phq_dichot + tobacco_dichot,
+                         data = score_df, family = binomial)
+summary(m_alc_12m_dich_b3)
+or_ci(m_alc_12m_dich_b3)
+
+# ------------------------------------------------
+# 8a. Binge Alcohol Use — 12mo — Loneliness (cont)
+# ------------------------------------------------
+
+# b0: crude
+m_alc_12mo_cont_b0 <- glm(binge_12mo ~ lonely_cont, data = score_df, family = binomial)
+summary(m_alc_12mo_cont_b0)
+or_ci(m_alc_12mo_cont_b0)
+
+# b1:
+m_alc_12mo_cont_b1 <- glm(binge_12mo ~ lonely_cont + age_cat + gender + new_race, data = score_df, family = binomial)
+summary(m_alc_12mo_cont_b1)
+or_ci(m_alc_12mo_cont_b1)
+
+# b2:
+m_alc_12mo_cont_b2 <- glm(binge_12mo ~ lonely_cont + age_cat + gender + new_race + gad_dichot + phq_dichot,
+                          data = score_df, family = binomial)
+summary(m_alc_12mo_cont_b2)
+or_ci(m_alc_12mo_cont_b2)
+
+# b3:
+m_alc_12mo_cont_b3 <- glm(binge_12mo ~ lonely_cont + age_cat + gender + new_race + gad_dichot + phq_dichot + tobacco_dichot,
+                          data = score_df,family = binomial)
+summary(m_alc_12mo_cont_b3)
+or_ci(m_alc_12mo_cont_b3)
+
+# ------------------------------------------------
+# 8b. Illicit Drug Use - 12mo - Loneliness (dich)
+# ------------------------------------------------
+
+# b0: crude
+m_il_12m_dich_b0 <- glm(drugs_dichot ~ lonely_dichot, data = score_df, family = binomial)
+summary(m_il_12m_dich_b0)
+or_ci(m_il_12m_dich_b0)
+
+# b1:
+m_il_12m_dich_b1 <- glm(drugs_dichot ~ lonely_dichot + age_cat + gender + new_race,
+                        data = score_df, family = binomial)
+summary(m_il_12m_dich_b1)
+or_ci(m_il_12m_dich_b1)
+
+# b2:
+m_il_12m_dich_b2 <- glm(drugs_dichot ~ lonely_dichot + age_cat + gender + new_race + gad_dichot + phq_dichot,
+                        data = score_df, family = binomial)
+summary(m_il_12m_dich_b2)
+or_ci(m_il_12m_dich_b2)
+
+# b3:
+m_il_12m_dich_b3 <- glm(drugs_dichot ~ lonely_dichot + age_cat + gender + new_race + gad_dichot + phq_dichot + tobacco_dichot,
+                        data = score_df, family = binomial)
+summary(m_il_12m_dich_b3)
+or_ci(m_il_12m_dich_b3)
+
+# ------------------------------------------------
+# 8b. Illicit Drug Use — 12mo — Loneliness (cont)
+# ------------------------------------------------
+
+# b0: crude
+m_il_12mo_cont_b0 <- glm(drugs_dichot ~ lonely_cont, data = score_df, family = binomial)
+summary(m_il_12mo_cont_b0)
+or_ci(m_il_12mo_cont_b0)
+
+# b1:
+m_il_12mo_cont_b1 <- glm(drugs_dichot ~ lonely_cont + age_cat + gender + new_race, data = score_df, family = binomial)
+summary(m_il_12mo_cont_b1)
+or_ci(m_il_12mo_cont_b1)
+
+# b2:
+m_il_12mo_cont_b2 <- glm(drugs_dichot ~ lonely_cont + age_cat + gender + new_race + gad_dichot + phq_dichot,
+                         data = score_df, family = binomial)
+summary(m_il_12mo_cont_b2)
+or_ci(m_il_12mo_cont_b2)
+
+# b3:
+m_il_12mo_cont_b3 <- glm(drugs_dichot ~ lonely_cont + age_cat + gender + new_race + gad_dichot + phq_dichot + tobacco_dichot,
+                         data = score_df, family = binomial)
+summary(m_il_12mo_cont_b3)
+or_ci(m_il_12mo_cont_b3)
+
+# ----------------------------------------------------
+# 8c. Prescription Meds Use - 12mo - Loneliness (dich)
+# ----------------------------------------------------
+
+# b0: crude
+m_med_12m_dich_b0 <- glm(meds_dichot ~ lonely_dichot, data = score_df, family = binomial)
+summary(m_med_12m_dich_b0)
+or_ci(m_med_12m_dich_b0)
+
+# b1:
+m_med_12m_dich_b1 <- glm(meds_dichot ~ lonely_dichot + age_cat + gender + new_race,
+                         data = score_df, family = binomial)
+summary(m_med_12m_dich_b1)
+or_ci(m_med_12m_dich_b1)
+
+# b2:
+m_med_12m_dich_b2 <- glm(meds_dichot ~ lonely_dichot + age_cat + gender + new_race + gad_dichot + phq_dichot,
+                         data = score_df, family = binomial)
+summary(m_med_12m_dich_b2)
+or_ci(m_med_12m_dich_b2)
+
+# b3:
+m_med_12m_dich_b3 <- glm(meds_dichot ~ lonely_dichot + age_cat + gender + new_race + gad_dichot + phq_dichot + tobacco_dichot,
+                        data = score_df, family = binomial)
+summary(m_med_12m_dich_b3)
+or_ci(m_med_12m_dich_b3)
+
+# ----------------------------------------------------
+# 8c. Prescription Meds Use - 12mo - Loneliness (cont)
+# ----------------------------------------------------
+
+# b0: crude
+m_med_12mo_cont_b0 <- glm(drugs_dichot ~ lonely_cont, data = score_df, family = binomial)
+summary(m_med_12mo_cont_b0)
+or_ci(m_med_12mo_cont_b0)
+
+# b1:
+m_med_12mo_cont_b1 <- glm(drugs_dichot ~ lonely_cont + age_cat + gender + new_race,data = score_df, family = binomial)
+summary(m_med_12mo_cont_b1)
+or_ci(m_med_12mo_cont_b1)
+
+# b2:
+m_med_12mo_cont_b2 <- glm(drugs_dichot ~ lonely_cont + age_cat + gender + new_race + gad_dichot + phq_dichot,
+                          data = score_df, family = binomial)
+summary(m_med_12mo_cont_b2)
+or_ci(m_med_12mo_cont_b2)
+
+# b3:
+m_med_12mo_cont_b3 <- glm(drugs_dichot ~ lonely_cont + age_cat + gender + new_race + gad_dichot + phq_dichot + tobacco_dichot,
+                          data = score_df, family = binomial)
+summary(m_med_12mo_cont_b3)
+or_ci(m_med_12mo_cont_b3)
 
 
-# ---------------------------------------
-# 7b. CONTINUOUS loneliness 'lonely_cont'
-# ---------------------------------------
-# --------------------
-# 7b1. UNADJUSTED
-# --------------------
+# --------------------------------------------
+# 8d. Tobacco Use - 12mo - Loneliness (dich)
+# --------------------------------------------
 
-## Binge Alcohol Use (loneliness = alcohol2 + E)
-#  model
-m_alc_unadj_cont <- glm(alcohol2 ~ lonely_cont, data = score_df, family = binomial)
-summary(m_alc_unadj_cont)
+# b0: crude
+m_tob_12m_dich_b0 <- glm(tobacco_dichot ~ lonely_dichot, data = score_df, family = binomial)
+summary(m_tob_12m_dich_b0)
+or_ci(m_tob_12m_dich_b0)
 
-#95% CI
-exp(cbind(
-  OR = coef(m_alc_unadj_cont),
-  confint(m_alc_unadj_cont)))
+# b1:
+m_tob_12m_dich_b1 <- glm(tobacco_dichot ~ lonely_dichot + age_cat + gender + new_race,
+                         data = score_df, family = binomial)
+summary(m_tob_12m_dich_b1)
+or_ci(m_tob_12m_dich_b1)
 
+# b2:
+m_tob_12m_dich_b2 <- glm(tobacco_dichot ~ lonely_dichot + age_cat + gender + new_race + gad_dichot + phq_dichot,
+                         data = score_df, family = binomial)
+summary(m_tob_12m_dich_b2)
+or_ci(m_tob_12m_dich_b2)
 
-## Cannabis Use (loneliness = marijuana + E)
-#  model
-m_can_unadj_cont <- glm(marijuana ~ lonely_cont, data = score_df, family = binomial)
-summary(m_can_unadj_cont)
+# b3: N/A
 
-#95% CI
-exp(cbind(
-  OR = coef(m_can_unadj_cont),
-  confint(m_can_unadj_cont)))
+# --------------------------------------------
+# 8d. Tobacco Use - 12mo - Loneliness (cont)
+# --------------------------------------------
 
+# b0: crude
+m_tob_12mo_cont_b0 <- glm(tobacco_dichot ~ lonely_cont, data = score_df, family = binomial)
+summary(m_tob_12mo_cont_b0)
+or_ci(m_tob_12mo_cont_b0)
 
-## Illicit Drug Use (loneliness = illicit + E)
-#  model
-m_il_unadj_cont <- glm(illicit ~ lonely_cont, data = score_df, family = binomial)
-summary(m_il_unadj_cont)
+# b1:
+m_tob_12mo_cont_b1 <- glm(tobacco_dichot ~ lonely_cont + age_cat + gender + new_race,
+                          data = score_df, family = binomial)
+summary(m_tob_12mo_cont_b1)
+or_ci(m_tob_12mo_cont_b1)
 
-#95% CI
-exp(cbind(
-  OR = coef(m_il_unadj_cont),
-  confint(m_il_unadj_cont)))
+# b2:
+m_tob_12mo_cont_b2 <- glm(tobacco_dichot ~ lonely_cont + age_cat + gender + new_race + gad_dichot + phq_dichot,
+                          data = score_df, family = binomial)
+summary(m_tob_12mo_cont_b2)
+or_ci(m_tob_12mo_cont_b2)
 
-
-## Tobacco Use (loneliness = cigarette + E)
-#  model
-m_tob_unadj_cont <- glm(cigarette ~ lonely_cont, data = score_df, family = binomial)
-summary(m_tob_unadj_cont)
-
-#95% CI
-exp(cbind(
-  OR = coef(m_tob_unadj_cont),
-  confint(m_tob_unadj_cont)))
-
-
-
-
-
-# ----------------
-# 7b2. ADJUSTED
-# ----------------
-
-
+# b3: N/A
 
