@@ -6,14 +6,17 @@
 ############################
 
 ## Prelim Analysis Plan:
-## 1. LOAD LIBRARIES AND IMPORT RAW DATA
-## 2. APPLY INCLUSION/EXCLUSION CRITERIA
-## 3. EXPLORATORY ANALYSES
-## 4. CLEANING/RECODING
-## 5. LONELINESS SCORING
-## 6. DESCRIPTIVES (TABLE 1S)
-## 7. MODELS - 3m OUTCOMES (TABLE 2)
-## 8. MODELS - 12M OUTCOMES (TABLE 2)
+## 1.  LOAD LIBRARIES AND IMPORT RAW DATA
+## 2.  APPLY INCLUSION/EXCLUSION CRITERIA
+## 3.  EXPLORATORY ANALYSES
+## 4.  CLEANING/RECODING
+## 5.  LONELINESS SCORING
+## 6.  DESCRIPTIVES (TABLE 1S)
+## 7.  MODELS - 3m OUTCOMES (TABLE 2)
+## 8.  MODELS - 12M OUTCOMES (TABLE 2)
+## 9.  STRATIFICATION BY MOD/SEV ANXIETY OR DEPRESSION SYMPTOMS VS NONE/MILD
+## 10. POST HOC - ILLICITS PAST 3M HEROIN, CRACK/COCAINE, ANY OTHER W > 10 
+## 11. NEW OUTCOME: PAST 3M OPIOIDS OR SEDATIVES
 
 # -------------------------------------
 # 1. LOAD LIBRARIES AND IMPORT RAW DATA
@@ -27,7 +30,8 @@ library(broom)
 getwd()
 
 # load dataset (raw, NOT labels version)
-raw_data = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2026-01-07_1250.csv")
+raw_data = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2026-01-07_1250.csv")   # 01-07-26 data
+# raw_data_2 = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2026_01-27-1048.csv") # 01-27-26 data
 
 # check
 skimr::skim(raw_data)
@@ -231,7 +235,7 @@ clean_df <- clean_df |>
       cigarette_1 == 2 ~ 0,    # no  '0' ref
       TRUE             ~ NA),
     alcohol = case_when(
-      alcohol_1 == 1 ~ 1,
+      alcohol_1 == 1 ~ 1,      # "    "
       alcohol_1 == 2 ~ 0,
       TRUE           ~ NA),
     alcohol2 = case_when(
@@ -312,6 +316,7 @@ clean_df |>
 # 4b. PHQ/GAD SCORE DICHOTS
 # -------------------------
 
+# first, sum missing GAD & PHQ scores for Record IDs 61, 275
 clean_df <- clean_df |> 
   rowwise() |> 
   mutate(
@@ -326,6 +331,7 @@ clean_df <- clean_df |>
       phq_score)) |> 
   ungroup()
 
+# then, create dichots using cutoff of 10 (< 10, >= 10) for GAD & PHQ scales
 clean_df <- clean_df |> 
   mutate(
     gad_dichot = case_when(
@@ -338,9 +344,19 @@ clean_df <- clean_df |>
       phq_score < 10 ~ 0,
       TRUE ~ NA_real_))
 
+# check
 view(clean_df)
 table(clean_df$phq_score, clean_df$phq_dichot, useNA = "ifany")
 table(clean_df$gad_score, clean_df$gad_dichot, useNA = "ifany")
+
+# check all 3m outcomes
+table(clean_df$cigarette, clean_df$cigarette_1, useNA = "ifany")
+table(clean_df$alcohol2, clean_df$alcohol_2, useNA = "ifany")
+table(clean_df$opioid, clean_df$opioid_1, useNA = "ifany")
+table(clean_df$heroin, clean_df$heroin_1, useNA = "ifany")
+table(clean_df$illegal_drug, clean_df$illegal_drug_1, useNA = "ifany")
+table(clean_df$adhd, clean_df$adhd_1, useNA = "ifany")
+table(clean_df$med_anxiety, clean_df$med_anxiety_1, useNA = "ifany")
 
 # ---------------------
 # 4c. NEW RACE VARIABLE
@@ -370,9 +386,9 @@ table(clean_df$new_race_f, useNA = "ifany")
 ## 13 NAs - discuss with Zach
 ## discussed on 1/15/26 - leave as is. that's to be expected for now
 
-# ------------------------------
-# 4d. NEW ILLICIT DRUGS VARIABLE
-# ------------------------------
+# ----------------------------
+# 4d. 3-MONTH ILLICIT DRUGS
+# ----------------------------
 
 clean_df <- clean_df |> 
   mutate(
@@ -382,11 +398,11 @@ clean_df <- clean_df |>
         med_anxiety, adhd, illegal_drug))) > 0))
 
 # check
-table(clean_df$illicit) # should be 34
+table(clean_df$illicit, useNA = "ifany") # should be 34, 0 NAs
 
-# -----------------------
-# 4e. NAs for 'alcohol_2'
-# -----------------------
+# -----------------------------
+# 4e. Clean NAs for 'alcohol_2'
+# -----------------------------
 
 clean_df <- clean_df |> 
   mutate(alcohol2 = replace_na(alcohol2, 0))
@@ -425,6 +441,11 @@ clean_df <- clean_df |>
                             meds == 5     ~ 0,
                             TRUE          ~ NA_real_))
 
+# check
+table(clean_df$tobacco, clean_df$tobacco_dichot, useNA = "ifany")
+table(clean_df$meds, clean_df$meds_dichot, useNA = "ifany")
+# ^ 1 'meds' & 'meds_dichot' NA, missing in raw data (Record ID 399)
+
 # -------------------------------
 # 4g. 12-MONTH BINGE ALC VARIABLE
 # -------------------------------
@@ -445,6 +466,9 @@ table(clean_df$meds, clean_df$meds_dichot, useNA = "ifany") # NA meds is ok, tha
 table(clean_df$males, clean_df$males_dichot, useNA = "ifany")
 table(clean_df$females, clean_df$females_dichot, useNA = "ifany")
 table(clean_df$binge_12mo_raw, clean_df$binge_12mo, useNA = "ifany")
+# ^ 3 NAs binge_12m, Record IDs 10, 107, 133. missing 'males', 'females', 'alcohol2' (2/no to 'alcohol')
+
+write_csv(clean_df, "outputs/clean_df_2.2.26.csv")
 
 # ---------------------
 # 5. LONELINESS SCORING
@@ -544,9 +568,7 @@ score_df <- score_df|>
 view(score_df |>
        summarise(
          lonely_min = min(lonely_cont, na.rm = TRUE),
-         lonely_max = max(lonely_cont, na.rm = TRUE))) 
-
-# loneliness score range: 20-74
+         lonely_max = max(lonely_cont, na.rm = TRUE))) # loneliness score range: 20-74
 
 # lonely_cont summary
 score_df |> 
@@ -575,7 +597,6 @@ score_df <- score_df |>
       lonely_dichot,
       levels = c(0, 1),
       labels = c("None/Mild", "Mod/High")))
-
 
 # check
 class(score_df$lonely_dichot)
@@ -763,123 +784,113 @@ chisq.test(table(score_df$illicit, score_df$lonely_dichot))
 # 6b2. TABLE 1 - continuous loneliness
 # --------------------------------------
 
-# totals
-n_total <- nrow(score_df)
-n_none_mild <- sum(score_df$lonely_dichot == "None/Mild", na.rm = TRUE)
-n_mod_high  <- sum(score_df$lonely_dichot == "Mod/High", na.rm = TRUE)
+# total, lonely_cont
+score_df |> 
+  summarise(
+    n = sum(!is.na(lonely_cont)), # N = 296
+    mean = mean(lonely_cont),     # mean = 40.33446
+    sd = sd(lonely_cont))         # sd = 12.70872
 
 ## Sex 'gender'
-# total
-total_gender <- table(score_df$gender)
-prop.table(total_gender)*100
+score_df |> count(gender) # 2 categories -> t-test
+p_gender <- t.test(lonely_cont ~ gender, data = score_df)$p.value
 
-# stratified
-tab_gender <- table(score_df$gender, score_df$lonely_dichot)
-prop.table(tab_gender, margin = 2)*100
-
-
-
+score_df |> 
+  group_by(gender) |> 
+  summarise(
+    n = sum(!is.na(lonely_cont)), 
+    mean = mean(lonely_cont),     
+    sd = sd(lonely_cont),         
+    p_gender)                     
 
 ## Age 'age_cat'
-# total
-total_age <- table(score_df$age_cat)
-prop.table(total_age)*100
+score_df |> count(age_cat) # 3 categories -> ANOVA
+summary(aov(lonely_cont ~ gender, data = score_df))
 
-# stratified
-tab_age   <- table(score_df$age_cat, score_df$lonely_dichot)
-prop.table(tab_age, margin = 2)*100
-
-
-
+score_df |> 
+  group_by(age_cat) |> 
+  summarise(
+    n = sum(!is.na(lonely_cont)), 
+    mean = mean(lonely_cont),     
+    sd = sd(lonely_cont))         
 
 ## Race/Ethnicity 'new_race'
-# total
-total_race <- table(score_df$new_race)
-prop.table(total_race)*100
+score_df |> count(new_race) # 4 categories -> ANOVA
+summary(aov(lonely_cont ~ new_race, data = score_df))
 
-# stratified
-tab_race <- table(score_df$new_race, score_df$lonely_dichot)
-prop.table(tab_race, margin = 2)*100
-
-
-
+score_df |> 
+  group_by(new_race) |> 
+  summarise(
+    n = sum(!is.na(lonely_cont)), 
+    mean = mean(lonely_cont),     
+    sd = sd(lonely_cont))
 
 ## Anxiety 'gad_dichot'
-# total
-total_anxiety <- table(score_df$gad_dichot)
-prop.table(total_anxiety)*100
+p_gad <- t.test(lonely_cont ~ gad_dichot, data = score_df)$p.value
 
-# stratified
-tab_anxiety <- table(score_df$gad_dichot, score_df$lonely_dichot)
-prop.table(tab_anxiety, margin = 2)*100
-
-
+score_df |> 
+  group_by(gad_dichot) |> 
+  summarise(
+    n = sum(!is.na(lonely_cont)), 
+    mean = mean(lonely_cont),     
+    sd = sd(lonely_cont),         
+    p_gad)      
 
 
 ## Depression 'phq_dichot'
-# total
-total_dep <- table(score_df$phq_dichot)
-prop.table(total_dep)*100
+p_phq <- t.test(lonely_cont ~ phq_dichot, data = score_df)$p.value
 
-# stratified
-tab_dep <- table(score_df$phq_dichot, score_df$lonely_dichot)
-prop.table(tab_dep, margin = 2)*100
-
-
+score_df |> 
+  group_by(phq_dichot) |> 
+  summarise(
+    n = sum(!is.na(lonely_cont)), 
+    mean = mean(lonely_cont),     
+    sd = sd(lonely_cont),         
+    p_phq)    
 
 ## Cigarette Use 'cigarette'
-# total
-total_cig <- table(score_df$cigarette)
-prop.table(total_cig)*100
+p_cig <- t.test(lonely_cont ~ cigarette, data = score_df)$p.value
 
-# stratified
-tab_cig <- table(score_df$cigarette, score_df$lonely_dichot)
-prop.table(tab_cig, margin = 2)*100
-
-
-
+score_df |> 
+  group_by(cigarette) |> 
+  summarise(
+    n = sum(!is.na(lonely_cont)), 
+    mean = mean(lonely_cont),     
+    sd = sd(lonely_cont),         
+    p_cig)    
 
 ## Binge Drink 'alcohol2'
-# total
-total_alc <- table(score_df$alcohol2)
-prop.table(total_alc)*100
+p_alc <- t.test(lonely_cont ~ alcohol2, data = score_df)$p.value
 
-# stratified
-tab_alc <- table(score_df$alcohol2, score_df$lonely_dichot)
-prop.table(tab_alc, margin = 2)*100
-
-
-
+score_df |> 
+  group_by(alcohol2) |> 
+  summarise(
+    n = sum(!is.na(lonely_cont)), 
+    mean = mean(lonely_cont),     
+    sd = sd(lonely_cont),         
+    p_alc) 
 
 ## Cannabis 'marijuana'
-# total
-total_cannabis <- table(score_df$marijuana)
-prop.table(total_cannabis)*100
+p_can <- t.test(lonely_cont ~ marijuana, data = score_df)$p.value
 
-# stratified
-tab_can <- table(score_df$marijuana, score_df$lonely_dichot)
-prop.table(tab_can, margin = 2)*100
-
-
+score_df |> 
+  group_by(marijuana) |> 
+  summarise(
+    n = sum(!is.na(lonely_cont)), 
+    mean = mean(lonely_cont),     
+    sd = sd(lonely_cont),         
+    p_can) 
 
 ## Illicit 'illicit'
-# total
-total_illicit <- table(score_df$illicit)
-total_illicit
-prop.table(total_illicit)*100
+p_ill <- t.test(lonely_cont ~ illicit, data = score_df)$p.value
 
-# stratified
-tab_illicit <- table(score_df$illicit, score_df$lonely_dichot)
-tab_illicit
-prop.table(tab_illicit, margin = 2)*100
-
-
-
-
-
-
-
-
+score_df |> 
+  group_by(illicit) |> 
+  summarise(
+    n = sum(!is.na(lonely_cont)), 
+    mean = mean(lonely_cont),     
+    sd = sd(lonely_cont),         
+    p_ill) 
 
 # ================================================
 # 7. LOGISTIC REGRESSION MODELS — 3-MONTH OUTCOMES
@@ -1369,14 +1380,20 @@ or_ci(m_tob_12mo_cont_b2)
 # 9. STRATIFIED ANALYSIS BY ANXIETY AND DEPRESSION
 # =================================================
 
-#------------------------------
-# Stratify by:
-#     if either 'gad_dichot' = 1 OR 'phq_dichot' = 1 (moderate/severe anxiety OR moderate/severe depression symptoms),
-#     then 'mh_strata' = 1. 
-#
-#     else, if 'gad_dichot' = 0 AND 'phq_dichot' = 0 (mild/none anxiety AND mild/none depression symptoms),
-#     then 'mh_strata' = 1.
-#------------------------------
+# Stratification:
+#     mh_strata = 1 if gad_dichot = 1 OR phq_dichot = 1 (moderate/severe anxiety OR moderate/severe depression)
+#               = 0 if gad_dichot = 0 AND phq_dichot = 0 (none/mild anxiety AND none/mild depression)
+
+# Time frame:
+#     10a) 3m outcomes
+#     10b) 12m outcomes 
+
+# For each outcome:
+#   - Loneliness modeled as dichotomous and continuou
+#   - Models estimated hierarchically:
+#       b0 = crude (unadjusted)
+#       b1 = + demographics
+#       b3 = + tobacco use (except when cigarette is the outcome)
 
 mh_df <- score_df |> 
   mutate(
@@ -1395,21 +1412,87 @@ mh_df <- score_df |>
 # check
 table(mh_df$mh_strata, useNA = "ifany")
 prop.table(table(mh_df$mh_strata))
+prop.table(table(mh_df$mh_strata, mh_df$lonely_dichot))
+
+
+
+mh_df |> count(mh_strata, lonely_dichot)
 
 ## results:
 ## mh_strata = 1 (mod/severe) N=103
 ## mh_strata = 0 (mild/none)  N=193
 
-# descriptives
 
-tbl_mh_demo <- mh_df |> 
-  filter(!is.na(mh_strata)) |> 
-  tbl_summary(
-    by = mh_strata,
-    include = c(age_cat, gender, new_race),
-    statistic = list(
-      all_categorical() ~ "{n} ({p}%)"),
-    missing = "no")
+# -------------------------------------
+# 10a. STRATIFIED MODELS - 3M OUTCOMES
+# -------------------------------------
+# Outcomes:
+#   a) Binge alcohol use    'alcohol2'
+#   b) Cannabis use         'marijuana'
+#   c) Illicit drug use     'illicit'
+#   d) Tobacco use          'cigarette'
+
+# -------------------------------------
+# 10a. STRATIFIED MODELS - 3M OUTCOMES
+# -------------------------------------
+
+# b0: crude
+m_alc_3m_dich_b0_mh <- glm(alcohol2 ~ lonely_dichot, data = score_df, family = binomial)
+summary(m_alc_3m_dich_b0)
+or_ci(m_alc_3m_dich_b0)
+
+# b1: 
+m_alc_3m_dich_b1 <- glm(alcohol2 ~ lonely_dichot + age_cat + gender + new_race,
+                        data = score_df,
+                        family = binomial)
+summary(m_alc_3m_dich_b1)
+or_ci(m_alc_3m_dich_b1)
+
+# b3: 
+m_alc_3m_dich_b3 <- glm(alcohol2 ~ lonely_dichot + age_cat + gender + new_race + gad_dichot + phq_dichot + cigarette,
+                        data = score_df,
+                        family = binomial)
+summary(m_alc_3m_dich_b3)
+or_ci(m_alc_3m_dich_b3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+# =================================================
+# 10. ILLICIT DRUG ANALYSIS - past 3m
+# =================================================
+
+#--------------
+# Frequencies
+#--------------
+
+# raw data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
