@@ -1434,17 +1434,16 @@ nrow(mh1_df) # N = 103
 # write.csv(mh1_df, file = "outputs/mh1_df_2.2.26.csv")
 
 
-# -------------------------------------
-# 9A. STRATIFIED MODELS - 3M OUTCOMES
-# -------------------------------------
+# ---------------------------------------------------
+# 9A. STRATIFIED MODELS - 3M OUTCOMES (lonely_dichot)
+# ---------------------------------------------------
 # Outcomes:
 #   a) Binge alcohol use    'alcohol2'
 #   b) Cannabis use         'marijuana'
 #   c) Illicit drug use     'illicit'
 #   d) Tobacco use          'cigarette'
-
 # ------------------------------------------------------
-# 9A-a. Binge Alcohol Use — 3mo — Loneliness (dich)
+# 9A-a. Binge Alcohol Use — 3mo — Loneliness (dichot)
 # mh0: None/Mild MH symptoms (mh_strata == 0)
 # ------------------------------------------------------
 
@@ -1466,7 +1465,7 @@ summary(m_alc_3m_dich_mh0_b3)
 or_ci(m_alc_3m_dich_mh0_b3)
 
 # ------------------------------------------------------
-# 9A-a. Binge Alcohol Use — 3mo — Loneliness (dich)
+# 9A-a. Binge Alcohol Use — 3mo — Loneliness (dichot)
 # mh1: Moderate/Severe MH symptoms (mh_strata == 1)
 # ------------------------------------------------------
 
@@ -1492,7 +1491,7 @@ with(mh0_df, table(alcohol2, lonely_dichot))
 with(mh1_df, table(alcohol2, lonely_dichot))
 
 # ------------------------------------------------------
-# 9A-b. Cannabis Use — 3mo — Loneliness (dich)
+# 9A-b. Cannabis Use — 3mo — Loneliness (dichot)
 # mh0: None/Mild MH symptoms (mh_strata == 0)
 # ------------------------------------------------------
 
@@ -1514,7 +1513,7 @@ summary(m_can_3m_dich_mh0_b3)
 or_ci(m_can_3m_dich_mh0_b3)
 
 # ------------------------------------------------------
-# 9A-b. Cannabis Use — 3mo — Loneliness (dich)
+# 9A-b. Cannabis Use — 3mo — Loneliness (dichot)
 # mh1: Moderate/Severe MH symptoms (mh_strata == 1)
 # ------------------------------------------------------
 
@@ -1540,7 +1539,7 @@ with(mh0_df, table(marijuana, lonely_dichot))
 with(mh1_df, table(marijuana, lonely_dichot))
 
 # ------------------------------------------------------
-# 9A-c. Illicit drug use — 3mo — Loneliness (dich)
+# 9A-c. Illicit drug use — 3mo — Loneliness (dichot)
 # mh0: None/Mild MH symptoms (mh_strata == 0)
 # ------------------------------------------------------
 
@@ -1562,7 +1561,7 @@ summary(m_il_3m_dich_mh0_b3)
 or_ci(m_il_3m_dich_mh0_b3)
 
 # ------------------------------------------------------
-# 9A-c. Illicit drug use — 3mo — Loneliness (dich)
+# 9A-c. Illicit drug use — 3mo — Loneliness (dichot)
 # mh1: Moderate/Severe MH symptoms (mh_strata == 1)
 # ------------------------------------------------------
 
@@ -1593,7 +1592,7 @@ glm(illicit ~ lonely_dichot * mh_strata + age_cat + gender + new_race + cigarett
     family = binomial)
 
 # ------------------------------------------------------
-# 9A-d. Tobacco use — 3mo — Loneliness (dich)
+# 9A-d. Tobacco use — 3mo — Loneliness (dichot)
 # mh0: None/Mild MH symptoms (mh_strata == 0)
 # ------------------------------------------------------
 
@@ -1609,7 +1608,7 @@ summary(m_tob_3m_dich_mh0_b1)
 or_ci(m_tob_3m_dich_mh0_b1)
 
 # ------------------------------------------------------
-# 9A-d. Tobacco use — 3mo — Loneliness (dich)
+# 9A-d. Tobacco use — 3mo — Loneliness (dichot)
 # mh1: Moderate/Severe MH symptoms (mh_strata == 1)
 # ------------------------------------------------------
 
@@ -1628,11 +1627,14 @@ or_ci(m_tob_3m_dich_mh1_b1)
 with(mh0_df, table(cigarette, lonely_dichot))
 with(mh1_df, table(cigarette, lonely_dichot))
 
-
-#################################################
-################## BOOKMARK #####################
-#################################################
-
+# -------------------------------------------------
+# 9B. STRATIFIED MODELS - 3M OUTCOMES (lonely_cont)
+# -------------------------------------------------
+# Outcomes:
+#   a) Binge alcohol use     'binge_12mo'
+#   b) Illicit drug use      'drugs_dichot'
+#   c) Prescription med use  'meds_dichot'
+#   d) Tobacco use           'tobacco_dichot'
 # ------------------------------------------------------
 # 9B-a. Binge Alcohol Use — 3mo — Loneliness (cont)
 # mh0: None/Mild MH symptoms (mh_strata == 0)
@@ -1814,43 +1816,239 @@ m_tob_3m_cont_mh1_b1 <- glm(cigarette ~ lonely_cont + age_cat + gender + new_rac
 summary(m_tob_3m_cont_mh1_b1)
 or_ci(m_tob_3m_cont_mh1_b1)
 
-# -------------------------------------
-# 9B. STRATIFIED MODELS - 12M OUTCOMES
-# -------------------------------------
+
+#################################################
+################## BOOKMARK #####################
+#################################################
+
+# ---------------------------------------------------
+# 10A. STRATIFIED MODELS - 12m OUTCOMES (lonely_dichot)
+# ---------------------------------------------------
 # Outcomes:
-#   a) Binge alcohol use     'binge_12mo'
-#   b) Illicit drug use      'drugs_dichot'
-#   c) Prescription med use  'meds_dichot'
-#   d) Tobacco use           'tobacco_dichot'
+#   a) Binge alcohol use      'binge_12mo'
+#   b) Illicit drug use       'drugs_dichot'
+#   c) Prescription med use   'meds_dichot'
+#   d) Tobacco use            'tobacco_dichot'
+# ------------------------------------------------------
+# 10A-a. Binge Alcohol Use — 12mo — Loneliness (dichot)
+# mh0: None/Mild MH symptoms (mh_strata == 0)
+# ------------------------------------------------------
+# b0: crude
+m_alc_12m_dich_mh0_b0 <- glm(binge_12mo ~ lonely_dichot,
+                           data = mh0_df, family = binomial)
+summary(m_alc_12m_dich_mh0_b0)
+or_ci(m_alc_12m_dich_mh0_b0)
 
+# b1: + demographics
+m_alc_12m_dich_mh0_b1 <- glm(binge_12mo ~ lonely_dichot + age_cat + gender + new_race,
+                             data = mh0_df, family = binomial)
+summary(m_alc_12m_dich_mh0_b1)
+or_ci(m_alc_12m_dich_mh0_b1)
 
+# b3: + cigarette
+m_alc_12m_dich_mh0_b3 <- glm(binge_12mo ~ lonely_dichot + age_cat + gender + new_race + tobacco_dichot,
+                             data = mh0_df, family = binomial)
+summary(m_alc_12m_dich_mh0_b3)
+or_ci(m_alc_12m_dich_mh0_b3)
 
+# checks
+with(mh0_df, table(binge_12mo, lonely_dichot))
+with(mh1_df, table(binge_12mo, lonely_dichot))
 
+# ------------------------------------------------------
+# 10A-a. Binge Alcohol Use — 12mo — Loneliness (dichot)
+# mh1: Moderate/Severe MH symptoms (mh_strata == 1)
+# ------------------------------------------------------
+# b0: crude
+m_alc_12m_dich_mh1_b0 <- glm(binge_12mo ~ lonely_dichot,
+                             data = mh1_df, family = binomial)
+summary(m_alc_12m_dich_mh1_b0)
+or_ci(m_alc_12m_dich_mh1_b0)
 
+# b1: + demographics
+m_alc_12m_dich_mh1_b1 <- glm(binge_12mo ~ lonely_dichot + age_cat + gender + new_race,
+                             data = mh1_df, family = binomial)
+summary(m_alc_12m_dich_mh1_b1)
+or_ci(m_alc_12m_dich_mh1_b1)
 
+# b3: + cigarette
+m_alc_12m_dich_mh1_b3 <- glm(binge_12mo ~ lonely_dichot + age_cat + gender + new_race + tobacco_dichot,
+                             data = mh1_df, family = binomial)
+summary(m_alc_12m_dich_mh1_b3)
+or_ci(m_alc_12m_dich_mh1_b3)
 
+# ------------------------------------------------------
+# 10A-b. Illicit Drug Use — 12mo — Loneliness (dichot)
+# mh0: None/Mild MH symptoms (mh_strata == 0)
+# ------------------------------------------------------
+# b0: crude
+m_il_12m_dich_mh0_b0 <- glm(drugs_dichot ~ lonely_dichot,
+                             data = mh0_df, family = binomial)
+summary(m_il_12m_dich_mh0_b0)
+or_ci(m_il_12m_dich_mh0_b0)
 
+# b1: + demographics
+m_il_12m_dich_mh0_b1 <- glm(drugs_dichot ~ lonely_dichot + age_cat + gender + new_race,
+                             data = mh0_df, family = binomial)
+summary(m_il_12m_dich_mh0_b1)
+or_ci(m_il_12m_dich_mh0_b1)
 
+# b3: + cigarette
+m_il_12m_dich_mh0_b3 <- glm(drugs_dichot ~ lonely_dichot + age_cat + gender + new_race + tobacco_dichot,
+                             data = mh0_df, family = binomial)
+summary(m_il_12m_dich_mh0_b3)
+or_ci(m_il_12m_dich_mh0_b3)
 
+# checks
+with(mh0_df, table(drugs_dichot, lonely_dichot))
+with(mh1_df, table(drugs_dichot, lonely_dichot))
 
+# ------------------------------------------------------
+# 10A-b. Illicit Drug Use — 12mo — Loneliness (dichot)
+# mh1: Moderate/Severe MH symptoms (mh_strata == 1)
+# ------------------------------------------------------
+# b0: crude
+m_il_12m_dich_mh1_b0 <- glm(drugs_dichot ~ lonely_dichot,
+                            data = mh1_df, family = binomial)
+summary(m_il_12m_dich_mh1_b0)
+or_ci(m_il_12m_dich_mh1_b0)
 
+# b1: + demographics
+m_il_12m_dich_mh1_b1 <- glm(drugs_dichot ~ lonely_dichot + age_cat + gender + new_race,
+                            data = mh1_df, family = binomial)
+summary(m_il_12m_dich_mh1_b1)
+or_ci(m_il_12m_dich_mh1_b1)
 
+# b3: + cigarette
+m_il_12m_dich_mh1_b3 <- glm(drugs_dichot ~ lonely_dichot + age_cat + gender + new_race + tobacco_dichot,
+                            data = mh1_df, family = binomial)
+summary(m_il_12m_dich_mh1_b3)
+or_ci(m_il_12m_dich_mh1_b3)
 
+# ------------------------------------------------------
+# 10A-c. Presc. Med Use — 12mo — Loneliness (dichot)
+# mh0: None/Mild MH symptoms (mh_strata == 0)
+# ------------------------------------------------------
+# b0: crude
+m_med_12m_dich_mh0_b0 <- glm(meds_dichot ~ lonely_dichot,
+                            data = mh0_df, family = binomial)
+summary(m_med_12m_dich_mh0_b0)
+or_ci(m_med_12m_dich_mh0_b0)
 
+# b1: + demographics
+m_med_12m_dich_mh0_b1 <- glm(meds_dichot ~ lonely_dichot + age_cat + gender + new_race,
+                            data = mh0_df, family = binomial)
+summary(m_med_12m_dich_mh0_b1)
+or_ci(m_med_12m_dich_mh0_b1)
 
+# b3: + cigarette
+m_med_12m_dich_mh0_b3 <- glm(meds_dichot ~ lonely_dichot + age_cat + gender + new_race + tobacco_dichot,
+                            data = mh0_df, family = binomial)
+summary(m_med_12m_dich_mh0_b3)
+or_ci(m_med_12m_dich_mh0_b3)
 
+# checks
+with(mh0_df, table(meds_dichot, lonely_dichot))
+with(mh1_df, table(meds_dichot, lonely_dichot))
 
+# ------------------------------------------------------
+# 10A-c. Presc. Med Use — 12mo — Loneliness (dichot)
+# mh1: Moderate/Severe MH symptoms (mh_strata == 1)
+# ------------------------------------------------------
+# b0: crude
+m_med_12m_dich_mh1_b0 <- glm(meds_dichot ~ lonely_dichot,
+                             data = mh1_df, family = binomial)
+summary(m_med_12m_dich_mh1_b0)
+or_ci(m_med_12m_dich_mh1_b0)
 
+# b1: + demographics
+m_med_12m_dich_mh1_b1 <- glm(meds_dichot ~ lonely_dichot + age_cat + gender + new_race,
+                             data = mh1_df, family = binomial)
+summary(m_med_12m_dich_mh1_b1)
+or_ci(m_med_12m_dich_mh1_b1)
 
+# b3: + cigarette
+m_med_12m_dich_mh1_b3 <- glm(meds_dichot ~ lonely_dichot + age_cat + gender + new_race + tobacco_dichot,
+                             data = mh1_df, family = binomial)
+summary(m_med_12m_dich_mh1_b3)
+or_ci(m_med_12m_dich_mh1_b3)
 
+# ------------------------------------------------------
+# 10A-d. Tobacco Use — 12mo — Loneliness (dichot)
+# mh0: None/Mild MH symptoms (mh_strata == 0)
+# ------------------------------------------------------
+# b0: crude
+m_tob_12m_dich_mh0_b0 <- glm(tobacco_dichot ~ lonely_dichot,
+                            data = mh0_df, family = binomial)
+summary(m_tob_12m_dich_mh0_b0)
+or_ci(m_tob_12m_dich_mh0_b0)
 
+# b1: + demographics
+m_tob_12m_dich_mh0_b1 <- glm(tobacco_dichot ~ lonely_dichot + age_cat + gender + new_race,
+                            data = mh0_df, family = binomial)
+summary(m_tob_12m_dich_mh0_b1)
+or_ci(m_tob_12m_dich_mh0_b1)
 
+# checks
+with(mh0_df, table(tobacco_dichot, lonely_dichot))
+with(mh1_df, table(tobacco_dichot, lonely_dichot))
 
+# ------------------------------------------------------
+# 10A-d. Tobacco Use — 12mo — Loneliness (dichot)
+# mh1: Moderate/Severe MH symptoms (mh_strata == 1)
+# ------------------------------------------------------
+# b0: crude
+m_tob_12m_dich_mh1_b0 <- glm(tobacco_dichot ~ lonely_dichot,
+                             data = mh1_df, family = binomial)
+summary(m_tob_12m_dich_mh1_b0)
+or_ci(m_tob_12m_dich_mh1_b0)
 
+# b1: + demographics
+m_tob_12m_dich_mh1_b1 <- glm(tobacco_dichot ~ lonely_dichot + age_cat + gender + new_race,
+                             data = mh1_df, family = binomial)
+summary(m_tob_12m_dich_mh1_b1)
+or_ci(m_tob_12m_dich_mh1_b1)
 
-
-
-
+# -------------------------------------------------
+# 10B. STRATIFIED MODELS - 12m OUTCOMES (lonely_cont)
+# -------------------------------------------------
+# Outcomes:
+#   a) Binge alcohol use      'binge_12m'
+#   b) Illicit drug use       'drugs_dichot'
+#   c) Prescription med use   'meds_dichot'
+#   d) Tobacco use            'tobacco_dichot'
+# ------------------------------------------------------
+# 10B-a. Binge Alcohol Use — 12mo — Loneliness (cont)
+# mh0: None/Mild MH symptoms (mh_strata == 0)
+# ------------------------------------------------------
+# ------------------------------------------------------
+# 10B-a. Binge Alcohol Use — 12mo — Loneliness (cont)
+# mh1: Moderate/Severe MH symptoms (mh_strata == 1)
+# ------------------------------------------------------
+# ------------------------------------------------------
+# 10B-b. Illicit Drug Use — 12mo — Loneliness (cont)
+# mh0: None/Mild MH symptoms (mh_strata == 0)
+# ------------------------------------------------------
+# ------------------------------------------------------
+# 10B-b. Illicit Drug Use — 12mo — Loneliness (cont)
+# mh1: Moderate/Severe MH symptoms (mh_strata == 1)
+# ------------------------------------------------------
+# ------------------------------------------------------
+# 10B-c. Presc. Med Use — 12mo — Loneliness (cont)
+# mh0: None/Mild MH symptoms (mh_strata == 0)
+# ------------------------------------------------------
+# ------------------------------------------------------
+# 10B-c. Presc. Med Use — 12mo — Loneliness (cont)
+# mh1: Moderate/Severe MH symptoms (mh_strata == 1)
+# ------------------------------------------------------
+# ------------------------------------------------------
+# 10B-d. Tobacco Use — 12mo — Loneliness (cont)
+# mh0: None/Mild MH symptoms (mh_strata == 0)
+# ------------------------------------------------------
+# ------------------------------------------------------
+# 10B-d. Tobacco Use — 12mo — Loneliness (cont)
+# mh1: Moderate/Severe MH symptoms (mh_strata == 1)
+# ------------------------------------------------------
 
 
 
