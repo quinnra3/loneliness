@@ -1376,7 +1376,7 @@ or_ci(m_tob_12mo_cont_b2)
 # b3: N/A
 
 # =================================================
-# 9. STRATIFIED ANALYSIS BY ANXIETY AND DEPRESSION
+# 9-10. STRATIFIED ANALYSIS BY ANXIETY AND DEPRESSION
 # =================================================
 
 # Stratification:
@@ -1384,8 +1384,10 @@ or_ci(m_tob_12mo_cont_b2)
 #               = 0 if gad_dichot = 0 AND phq_dichot = 0 (none/mild anxiety AND none/mild depression)
 
 # Time frame:
-#     10A) 3m outcomes
-#     10B) 12m outcomes 
+#     9A) 3m outcomes (lonely_dichot)
+#     9B) 3m outcomes (lonely_cont)
+#     10A) 12m outcomes (lonely_dichot)
+#     10B) 12m outcomes (lonely_cont)
 
 # For each outcome within each time frame:
 #   - Loneliness modeled as dichotomous and continuous
@@ -1626,14 +1628,6 @@ or_ci(m_tob_3m_dich_mh1_b1)
 with(mh0_df, table(cigarette, lonely_dichot))
 with(mh1_df, table(cigarette, lonely_dichot))
 
-# -------------------------------------
-# 9B. STRATIFIED MODELS - 12M OUTCOMES
-# -------------------------------------
-# Outcomes:
-#   a) Binge alcohol use     'binge_12mo'
-#   b) Illicit drug use      'drugs_dichot'
-#   c) Prescription med use  'meds_dichot'
-#   d) Tobacco use           'tobacco_dichot'
 
 #################################################
 ################## BOOKMARK #####################
@@ -1819,6 +1813,54 @@ m_tob_3m_cont_mh1_b1 <- glm(cigarette ~ lonely_cont + age_cat + gender + new_rac
                             data = mh1_df, family = binomial)
 summary(m_tob_3m_cont_mh1_b1)
 or_ci(m_tob_3m_cont_mh1_b1)
+
+# -------------------------------------
+# 9B. STRATIFIED MODELS - 12M OUTCOMES
+# -------------------------------------
+# Outcomes:
+#   a) Binge alcohol use     'binge_12mo'
+#   b) Illicit drug use      'drugs_dichot'
+#   c) Prescription med use  'meds_dichot'
+#   d) Tobacco use           'tobacco_dichot'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # =================================================
