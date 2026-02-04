@@ -14,9 +14,10 @@
 ## 6.  DESCRIPTIVES (TABLE 1S)
 ## 7.  MODELS - 3m OUTCOMES (TABLE 2)
 ## 8.  MODELS - 12M OUTCOMES (TABLE 2)
-## 9.  STRATIFICATION BY MOD/SEV ANXIETY OR DEPRESSION SYMPTOMS VS NONE/MILD
-## 10. POST HOC - ILLICITS PAST 3M HEROIN, CRACK/COCAINE, ANY OTHER W > 10 
-## 11. NEW OUTCOME: PAST 3M OPIOIDS OR SEDATIVES
+## 9.  STRATIFICATION BY MOD/SEV ANXIETY OR DEPRESSION SYMPTOMS VS NONE/MILD - Past 3m 
+## 10. STRATIFICATION BY MOD/SEV ANXIETY OR DEPRESSION SYMPTOMS VS NONE/MILD - Past 12m
+## 11. POST HOC - ILLICITS PAST 3M HEROIN, CRACK/COCAINE, ANY OTHER W > 10 
+## 12. NEW OUTCOME: PAST 3M OPIOIDS OR SEDATIVES
 
 # -------------------------------------
 # 1. LOAD LIBRARIES AND IMPORT RAW DATA
@@ -31,7 +32,6 @@ getwd()
 
 # load dataset (raw, NOT labels version)
 raw_data = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2026-01-07_1250.csv")   # 01-07-26 data
-# raw_data_2 = read.csv(file = "./data/LonelinessAndSubstan-ALLDATA_DATA_2026_01-27-1048.csv") # 01-27-26 data
 
 # check
 skimr::skim(raw_data)
@@ -409,6 +409,7 @@ clean_df <- clean_df |>
 
 # check
 view(clean_df)
+with(clean_df, alcohol2)
 
 # ---------------------------------
 # 4f. 12-MONTH SUBSTANCE USE DICHOT
@@ -673,7 +674,6 @@ prop.table(tab_gender, margin = 2)*100
 chisq.test(tab_gender)$p.value # OR
 chisq.test(table(score_df$gender, score_df$lonely_dichot))
 
-
 ## Age 'age_cat'
 # total
 total_age <- table(score_df$age_cat)
@@ -686,7 +686,6 @@ prop.table(tab_age, margin = 2)*100
 # chi-square
 chisq.test(table(score_df$age_cat, score_df$lonely_dichot))
  
-
 ## Race/Ethnicity 'new_race'
 # total
 total_race <- table(score_df$new_race)
@@ -698,7 +697,6 @@ prop.table(tab_race, margin = 2)*100
 
 # chi-sq
 chisq.test(table(score_df$age_cat, score_df$lonely_dichot))
-
 
 ## Anxiety 'gad_dichot'
 # total
@@ -712,7 +710,6 @@ prop.table(tab_anxiety, margin = 2)*100
 # chi-sq
 chisq.test(table(score_df$gad_dichot, score_df$lonely_dichot))
 
-
 ## Depression 'phq_dichot'
 # total
 total_dep <- table(score_df$phq_dichot)
@@ -724,7 +721,6 @@ prop.table(tab_dep, margin = 2)*100
 
 # chi-sq
 chisq.test(table(score_df$phq_dichot, score_df$lonely_dichot))
-
 
 ## Cigarette Use 'cigarette'
 # total
@@ -738,7 +734,6 @@ prop.table(tab_cig, margin = 2)*100
 # chi-sq
 chisq.test(table(score_df$cigarette, score_df$lonely_dichot))
 
-
 ## Binge Drink 'alcohol2'
 # total
 total_alc <- table(score_df$alcohol2)
@@ -751,7 +746,6 @@ prop.table(tab_alc, margin = 2)*100
 # chi-sq
 chisq.test(table(score_df$cigarette, score_df$lonely_dichot))
 
-
 ## Cannabis 'marijuana'
 # total
 total_cannabis <- table(score_df$marijuana)
@@ -763,7 +757,6 @@ prop.table(tab_can, margin = 2)*100
 
 # chi-sq
 chisq.test(table(score_df$marijuana, score_df$lonely_dichot))
-
 
 ## Illicit 'illicit'
 # total
@@ -778,7 +771,6 @@ prop.table(tab_illicit, margin = 2)*100
 
 # chi-sq
 chisq.test(table(score_df$illicit, score_df$lonely_dichot))
-
 
 # --------------------------------------
 # 6b2. TABLE 1 - continuous loneliness
@@ -1375,9 +1367,9 @@ or_ci(m_tob_12mo_cont_b2)
 
 # b3: N/A
 
-# =================================================
+# =====================================================
 # 9-10. STRATIFIED ANALYSIS BY ANXIETY AND DEPRESSION
-# =================================================
+# =====================================================
 
 # Stratification:
 #     mh_strata = 1 if gad_dichot = 1 OR phq_dichot = 1 (moderate/severe anxiety OR moderate/severe depression)
@@ -1407,34 +1399,40 @@ mh_df <- score_df |>
       levels = c(0,1),
       labels = c("None/Mild MH symptoms", "Moderate/Severe MH symptoms")))
 
+mh_df1 <- score_df |> 
+  mutate(
+    mh_strata = case_when(
+      gad_dichot == 1 | phq_dichot == 1 ~ 1,
+      gad_dichot == 0 & phq_dichot == 0 ~ 0),
+    mh_strata = factor(
+      mh_strata,
+      levels = c(0,1)))
+
+# none/mild MH strata data frame
+mh0_df <- mh_df |> filter(mh_strata == "None/Mild MH symptoms")
+mh0_df1 <- mh_df1 |> filter(mh_strata == 1)
+
+
+# mod/sev MH strata data frame
+mh1_df <- mh_df |> filter(mh_strata == "Moderate/Severe MH symptoms")
+mh1_df1 <- mh_df1 |> filter(mh_strata == 0)
+
 # check
 table(mh_df$mh_strata, useNA = "ifany")
 prop.table(table(mh_df$mh_strata))
 prop.table(table(mh_df$mh_strata, mh_df$lonely_dichot))
 view(mh_df)
 mh_df |> count(mh_strata, lonely_dichot)
-## results:
-## mh_strata = 0 (mild/none)  N=193
-## mh_strata = 1 (mod/severe) N=103
 
-# none/mild MH strata data frame
-mh0_df <- mh_df |> 
-  filter(mh_strata == "None/Mild MH symptoms")
-
-# mod/sev MH strata data frame
-mh1_df <- mh_df |> 
-  filter(mh_strata == "Moderate/Severe MH symptoms")
-
-# check
 nrow(mh0_df) # N = 193
 nrow(mh1_df) # N = 103
 with(mh_df, addmargins(table(mh_strata, lonely_dichot)))
 
-
 # write.csv(mh_df, file = "outputs/mh_df_2.2.26.csv")
+write.csv(mh_df1, file = "outputs/mh_df1_2.4.26.csv")
+
 # write.csv(mh0_df, file = "outputs/mh0_df_2.2.26.csv")
 # write.csv(mh1_df, file = "outputs/mh1_df_2.2.26.csv")
-
 
 # ---------------------------------------------------
 # 9A. STRATIFIED MODELS - 3M OUTCOMES (lonely_dichot)
@@ -1444,6 +1442,7 @@ with(mh_df, addmargins(table(mh_strata, lonely_dichot)))
 #   b) Cannabis use         'marijuana'
 #   c) Illicit drug use     'illicit'
 #   d) Tobacco use          'cigarette'
+
 # ------------------------------------------------------
 # 9A-a. Binge Alcohol Use — 3mo — Loneliness (dichot)
 # mh0: None/Mild MH symptoms (mh_strata == 0)
@@ -1637,6 +1636,7 @@ with(mh1_df, table(cigarette, lonely_dichot))
 #   b) Illicit drug use      'drugs_dichot'
 #   c) Prescription med use  'meds_dichot'
 #   d) Tobacco use           'tobacco_dichot'
+
 # ------------------------------------------------------
 # 9B-a. Binge Alcohol Use — 3mo — Loneliness (cont)
 # mh0: None/Mild MH symptoms (mh_strata == 0)
@@ -1737,7 +1737,6 @@ with(mh1_df, table(marijuana, lonely_cont))
 # 9B-c. Illicit drug use — 3mo — Loneliness (cont)
 # mh0: None/Mild MH symptoms (mh_strata == 0)
 # ------------------------------------------------------
-
 # b0: crude
 m_il_3m_cont_mh0_b0 <- glm(illicit ~ lonely_cont,
                            data = mh0_df, family = binomial)
@@ -1831,6 +1830,7 @@ or_ci(m_tob_3m_cont_mh1_b1)
 #   b) Illicit drug use       'drugs_dichot'
 #   c) Prescription med use   'meds_dichot'
 #   d) Tobacco use            'tobacco_dichot'
+
 # ------------------------------------------------------
 # 10A-a. Binge Alcohol Use — 12mo — Loneliness (dichot)
 # mh0: None/Mild MH symptoms (mh_strata == 0)
@@ -2026,6 +2026,7 @@ or_ci(m_tob_12m_dich_mh1_b1)
 # 10B-a. Binge Alcohol Use — 12mo — Loneliness (cont)
 # mh0: None/Mild MH symptoms (mh_strata == 0)
 # ------------------------------------------------------
+
 # b0: crude
 m_alc_12m_cont_mh0_b0 <- glm(binge_12mo ~ lonely_cont,
                              data = mh0_df, family = binomial)
@@ -2212,37 +2213,66 @@ with(score_df, addmargins(table(illicit, lonely_dichot)))
 #   c-1) heroin             'heroin'
 with(score_df, addmargins(table(heroin, lonely_dichot)))
 
-
-############################################
-############## BOOKMARK ####################
-############################################
-
 #   c-2) cocaine            'cocaine'
 with(score_df, addmargins(table(cocaine, lonely_dichot)))
 
 #   c-3) opioid             'opioid'
-with(score_df, table(opioid, lonely_dichot))
+with(score_df, addmargins(table(opioid, lonely_dichot)))
 
 #   c-4) presc. meds        'med_anxiety'
-with(score_df, table(med_anxiety, lonely_dichot))
+with(score_df, addmargins(table(med_anxiety, lonely_dichot)))
 
-#   c-4) adhd meds          'adhd'
-with(score_df, table(adhd, lonely_dichot))
+#   c-5) adhd meds          'adhd'
+with(score_df, addmargins(table(adhd, lonely_dichot)))
 
-#   c-5) illegal drugs      'illegal_drug'
-with(score_df, table(illegal_drug, lonely_dichot))
+#   c-6) illegal drugs      'illegal_drug'
+with(score_df, addmargins(table(illegal_drug, lonely_dichot)))
 
 #   d) Tobacco use          'cigarette'
-with(score_df, table(cigarette, lonely_dichot))
+with(score_df, addmargins(table(cigarette, lonely_dichot)))
 
 score_df |> summary(lonely_cont)
 tapply(lonely_cont, illicit, summary)
 
+# -------------------------------------------------
+# FREQUENCIES: 
+#
+# 3M OUTCOMES total sample, 'alcohol2' binge drink
+# -------------------------------------------------
 
+#   a) Binge alcohol use    'alcohol2'
+with(score_df, addmargins(table(alcohol2)))
 
+#   b) Cannabis use         'marijuana'
+with(score_df, addmargins(table(marijuana, alcohol2)))
 
+#   c) Illicit drug use     'illicit'
+with(score_df, addmargins(table(illicit, alcohol2)))
 
+#   c-1) heroin             'heroin'
+with(score_df, addmargins(table(heroin, alcohol2)))
 
+#   c-2) cocaine            'cocaine'
+with(score_df, addmargins(table(cocaine, alcohol2)))
+
+#   c-3) opioid             'opioid'
+with(score_df, addmargins(table(opioid, alcohol2)))
+
+#   c-4) presc. meds        'med_anxiety'
+with(score_df, addmargins(table(med_anxiety, alcohol2)))
+
+#   c-5) adhd meds          'adhd'
+with(score_df, addmargins(table(adhd, alcohol2)))
+
+#   c-6) illegal drugs      'illegal_drug'
+with(score_df, addmargins(table(illegal_drug, alcohol2)))
+
+#   d) Tobacco use          'cigarette'
+with(score_df, addmargins(table(cigarette, alcohol2)))
+
+############################################
+############## BOOKMARK ####################
+############################################
 
 
 
